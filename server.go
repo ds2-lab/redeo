@@ -1,12 +1,12 @@
 package redeo
 
 import (
+	"fmt"
+	"github.com/bsm/redeo/resp"
 	"net"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/bsm/redeo/resp"
 )
 
 // Server configuration
@@ -66,6 +66,7 @@ func (srv *Server) Serve(lis net.Listener) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println("Accept", cn.RemoteAddr())
 
 		if ka := srv.config.TCPKeepAlive; ka > 0 {
 			if tc, ok := cn.(*net.TCPConn); ok {
@@ -74,6 +75,20 @@ func (srv *Server) Serve(lis net.Listener) error {
 			}
 		}
 
+		go srv.serveClient(newClient(cn))
+	}
+}
+
+func (srv *Server) Accept(lis net.Listener) net.Conn {
+	cn, err := lis.Accept()
+	if err != nil {
+		fmt.Println(err)
+	}
+	return cn
+}
+
+func (srv *Server) Serve_client(cn net.Conn) {
+	for {
 		go srv.serveClient(newClient(cn))
 	}
 }
