@@ -79,6 +79,7 @@ func (srv *Server) Serve(lis net.Listener) error {
 	}
 }
 
+// Accept conn
 func (srv *Server) Accept(lis net.Listener) net.Conn {
 	cn, err := lis.Accept()
 	if err != nil {
@@ -88,9 +89,10 @@ func (srv *Server) Accept(lis net.Listener) net.Conn {
 }
 
 func (srv *Server) Serve_client(cn net.Conn) {
-	for {
-		go srv.serveClient(newClient(cn))
-	}
+	//for {
+	//	go srv.serveClient(newClient(cn))
+	//}
+	srv.serveClient(newClient(cn))
 }
 
 // Starts a new session, serving client
