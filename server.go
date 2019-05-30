@@ -92,7 +92,9 @@ func (srv *Server) Serve_client(cn net.Conn) {
 	//for {
 	//	go srv.serveClient(newClient(cn))
 	//}
+
 	srv.serveClient(newClient(cn))
+
 }
 
 // Starts a new session, serving client
