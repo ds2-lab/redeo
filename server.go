@@ -92,7 +92,7 @@ func (srv *Server) Serve_client(cn net.Conn) {
 	//for {
 	//	go srv.serveClient(newClient(cn))
 	//}
-
+	fmt.Println("in the lambda server")
 	srv.serveClient(newClient(cn))
 
 }
