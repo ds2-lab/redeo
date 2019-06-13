@@ -191,28 +191,21 @@ func (srv *Server) myServeClient(c *Client, channel chan string, lambdaChannel c
 	// Init request/response loop
 	for !c.closed {
 		// set deadline
-		//if d := srv.config.Timeout; d > 0 {
-		//	c.cn.SetDeadline(time.Now().Add(d))
-		//}
+		if d := srv.config.Timeout; d > 0 {
+			c.cn.SetDeadline(time.Now().Add(d))
+		}
 		select {
-		//case name := <-myPeekCmd(c, cmdChannel):
-		//	fmt.Println(, name)
-		//	fmt.Println(c.cmd.Arg(0))
-		//	//srv.perform(c, string(name))
-		//	temp <- name
-		//	// flush buffer, return on errors
-		//	if err := c.wr.Flush(); err != nil {
-		//		return
-		//	}
-
 		case cmd := <-cmdChannel:
 			fmt.Println("cmd is ", cmd)
 			newReq := Req{cmd, c.cmd}
 			lambdaChannel <- newReq
 		case b := <-channel:
 			fmt.Println("from client channel", b)
-			c.wr.AppendBulkString(b)
-
+			c.wr.AppendInt(1)
+			// flush buffer, return on errors
+			if err := c.wr.Flush(); err != nil {
+				return
+			}
 		}
 	}
 }

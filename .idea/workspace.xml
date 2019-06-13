@@ -13,10 +13,19 @@
   <component name="FileEditorManager">
     <leaf>
       <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/client.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1500">
+              <caret line="107" selection-start-line="107" selection-end-line="107" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/server.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3648">
-              <caret line="257" lean-forward="true" selection-start-line="257" selection-end-line="257" />
+            <state relative-caret-position="516">
+              <caret line="204" column="30" selection-start-line="204" selection-start-column="30" selection-end-line="204" selection-end-column="30" />
               <folding>
                 <element signature="e#15#95#0" expanded="true" />
               </folding>
@@ -25,6 +34,11 @@
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>rd</find>
+    </findStrings>
   </component>
   <component name="GOROOT" path="/usr/local/Cellar/go/1.12/libexec" />
   <component name="Git.Settings">
@@ -37,8 +51,8 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/../../bsm/redeo/resp/request.go" />
-        <option value="$PROJECT_DIR$/client.go" />
         <option value="$PROJECT_DIR$/server.go" />
+        <option value="$PROJECT_DIR$/client.go" />
       </list>
     </option>
   </component>
@@ -173,23 +187,23 @@
     <entry file="file://$PROJECT_DIR$/config.go">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="30" column="22" lean-forward="true" selection-start-line="30" selection-start-column="9" selection-end-line="30" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/pubsub.go">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/server.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3648">
-          <caret line="257" lean-forward="true" selection-start-line="257" selection-end-line="257" />
+        <state relative-caret-position="516">
+          <caret line="204" column="30" selection-start-line="204" selection-start-column="30" selection-end-line="204" selection-end-column="30" />
           <folding>
             <element signature="e#15#95#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1500">
+          <caret line="107" selection-start-line="107" selection-end-line="107" />
         </state>
       </provider>
     </entry>
