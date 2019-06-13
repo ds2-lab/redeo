@@ -18,6 +18,11 @@ type Server struct {
 	mu   sync.RWMutex
 }
 
+type Req struct {
+	Cmd      string
+	Argument *resp.Command
+}
+
 // NewServer creates a new server instance
 func NewServer(config *Config) *Server {
 	if config == nil {
@@ -79,6 +84,29 @@ func (srv *Server) Serve(lis net.Listener) error {
 	}
 }
 
+// new serve with channel initial
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan string, lambdaChannel chan Req) error {
+	for {
+		count := 0
+		cn, err := lis.Accept()
+		if err != nil {
+			return err
+		}
+		fmt.Println("Accept", cn.RemoteAddr())
+
+		if ka := srv.config.TCPKeepAlive; ka > 0 {
+			if tc, ok := cn.(*net.TCPConn); ok {
+				tc.SetKeepAlive(true)
+				tc.SetKeepAlivePeriod(ka)
+			}
+		}
+		c := make(chan string, 1)
+		cMap[count] = c
+		count = count + 1
+		go srv.myServeClient(newClient(cn), c, lambdaChannel)
+	}
+}
+
 // Accept conn
 func (srv *Server) Accept(lis net.Listener) net.Conn {
 	cn, err := lis.Accept()
@@ -88,6 +116,7 @@ func (srv *Server) Accept(lis net.Listener) net.Conn {
 	return cn
 }
 
+// Lambda facing serve client
 func (srv *Server) Serve_client(cn net.Conn) {
 	//for {
 	//	go srv.serveClient(newClient(cn))
@@ -97,7 +126,6 @@ func (srv *Server) Serve_client(cn net.Conn) {
 
 }
 
-// Starts a new session, serving client
 func (srv *Server) serveClient(c *Client) {
 	// Release client on exit
 	defer c.release()
@@ -131,6 +159,58 @@ func (srv *Server) serveClient(c *Client) {
 		// flush buffer, return on errors
 		if err := c.wr.Flush(); err != nil {
 			return
+		}
+	}
+}
+
+func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
+	for more := true; more; more = c.rd.Buffered() != 0 {
+		name, err := c.rd.PeekCmd()
+		if err != nil {
+			_ = c.rd.SkipCmd()
+		}
+		channel <- name
+		c.cmd, err = c.readCmd(c.cmd)
+	}
+	//return channel
+}
+
+// event handler
+func (srv *Server) myServeClient(c *Client, channel chan string, lambdaChannel chan Req) {
+	cmdChannel := make(chan string, 1)
+
+	go myPeekCmd(c, cmdChannel)
+
+	// Release client on exit
+	defer c.release()
+
+	// Register client
+	srv.info.register(c)
+	defer srv.info.deregister(c.id)
+
+	// Init request/response loop
+	for !c.closed {
+		// set deadline
+		//if d := srv.config.Timeout; d > 0 {
+		//	c.cn.SetDeadline(time.Now().Add(d))
+		//}
+		select {
+		//case name := <-myPeekCmd(c, cmdChannel):
+		//	fmt.Println(, name)
+		//	fmt.Println(c.cmd.Arg(0))
+		//	//srv.perform(c, string(name))
+		//	temp <- name
+		//	// flush buffer, return on errors
+		//	if err := c.wr.Flush(); err != nil {
+		//		return
+		//	}
+
+		case cmd := <-cmdChannel:
+			fmt.Println("cmd is ", cmd, "argument")
+			newReq := Req{cmd, c.cmd}
+			lambdaChannel <- newReq
+		case b := <-channel:
+			fmt.Println(b, "from client channel", b)
 		}
 	}
 }
