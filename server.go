@@ -206,11 +206,13 @@ func (srv *Server) myServeClient(c *Client, channel chan string, lambdaChannel c
 		//	}
 
 		case cmd := <-cmdChannel:
-			fmt.Println("cmd is ", cmd, "argument")
+			fmt.Println("cmd is ", cmd)
 			newReq := Req{cmd, c.cmd}
 			lambdaChannel <- newReq
 		case b := <-channel:
-			fmt.Println(b, "from client channel", b)
+			fmt.Println("from client channel", b)
+			c.wr.AppendBulkString(b)
+
 		}
 	}
 }
