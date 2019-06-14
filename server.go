@@ -85,7 +85,7 @@ func (srv *Server) Serve(lis net.Listener) error {
 }
 
 // new serve with channel initial
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan string, lambdaChannel chan Req) error {
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
 	for {
 		count := 0
 		cn, err := lis.Accept()
@@ -100,7 +100,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan string, lambdaCha
 				tc.SetKeepAlivePeriod(ka)
 			}
 		}
-		c := make(chan string, 1)
+		c := make(chan interface{}, 1)
 		cMap[count] = c
 		count = count + 1
 		go srv.myServeClient(newClient(cn), c, lambdaChannel)
@@ -176,7 +176,7 @@ func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
 }
 
 // event handler
-func (srv *Server) myServeClient(c *Client, channel chan string, lambdaChannel chan Req) {
+func (srv *Server) myServeClient(c *Client, channel chan interface{}, lambdaChannel chan Req) {
 	cmdChannel := make(chan string, 1)
 
 	go myPeekCmd(c, cmdChannel)
