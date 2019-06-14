@@ -84,48 +84,6 @@ func (srv *Server) Serve(lis net.Listener) error {
 	}
 }
 
-// new serve with channel initial
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
-	for {
-		count := 0
-		cn, err := lis.Accept()
-		if err != nil {
-			return err
-		}
-		fmt.Println("Accept", cn.RemoteAddr())
-
-		if ka := srv.config.TCPKeepAlive; ka > 0 {
-			if tc, ok := cn.(*net.TCPConn); ok {
-				tc.SetKeepAlive(true)
-				tc.SetKeepAlivePeriod(ka)
-			}
-		}
-		c := make(chan interface{}, 1)
-		cMap[count] = c
-		count = count + 1
-		go srv.myServeClient(newClient(cn), c, lambdaChannel)
-	}
-}
-
-// Accept conn
-func (srv *Server) Accept(lis net.Listener) net.Conn {
-	cn, err := lis.Accept()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return cn
-}
-
-// Lambda facing serve client
-func (srv *Server) Serve_client(cn net.Conn) {
-	//for {
-	//	go srv.serveClient(newClient(cn))
-	//}
-	fmt.Println("in the lambda server")
-	srv.serveClient(newClient(cn))
-
-}
-
 func (srv *Server) serveClient(c *Client) {
 	// Release client on exit
 	defer c.release()
@@ -159,53 +117,6 @@ func (srv *Server) serveClient(c *Client) {
 		// flush buffer, return on errors
 		if err := c.wr.Flush(); err != nil {
 			return
-		}
-	}
-}
-
-func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
-	for more := true; more; more = c.rd.Buffered() != 0 {
-		name, err := c.rd.PeekCmd()
-		if err != nil {
-			_ = c.rd.SkipCmd()
-		}
-		channel <- name
-		c.cmd, err = c.readCmd(c.cmd)
-	}
-	//return channel
-}
-
-// event handler
-func (srv *Server) myServeClient(c *Client, channel chan interface{}, lambdaChannel chan Req) {
-	cmdChannel := make(chan string, 1)
-
-	go myPeekCmd(c, cmdChannel)
-
-	// Release client on exit
-	defer c.release()
-
-	// Register client
-	srv.info.register(c)
-	defer srv.info.deregister(c.id)
-
-	// Init request/response loop
-	for !c.closed {
-		// set deadline
-		if d := srv.config.Timeout; d > 0 {
-			c.cn.SetDeadline(time.Now().Add(d))
-		}
-		select {
-		case cmd := <-cmdChannel:
-			fmt.Println("cmd is ", cmd)
-			newReq := Req{cmd, c.cmd}
-			lambdaChannel <- newReq
-		case b := <-channel:
-			fmt.Println("from client channel", b)
-			c.wr.AppendInt(1)
-			// flush buffer, return on errors
-			if err := c.wr.Flush(); err != nil {
-				return
-			}
 		}
 	}
 }
@@ -248,4 +159,95 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 		err = c.wr.Flush()
 	}
 	return
+}
+
+func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
+	for more := true; more; more = c.rd.Buffered() != 0 {
+		name, err := c.rd.PeekCmd()
+		if err != nil {
+			_ = c.rd.SkipCmd()
+		}
+		channel <- name
+		c.cmd, err = c.readCmd(c.cmd)
+	}
+	//return channel
+}
+
+// new serve with channel initial
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
+	for {
+		count := 0
+		cn, err := lis.Accept()
+		if err != nil {
+			return err
+		}
+		fmt.Println("Accept", cn.RemoteAddr())
+
+		if ka := srv.config.TCPKeepAlive; ka > 0 {
+			if tc, ok := cn.(*net.TCPConn); ok {
+				tc.SetKeepAlive(true)
+				tc.SetKeepAlivePeriod(ka)
+			}
+		}
+		c := make(chan interface{}, 1)
+		cMap[count] = c
+		count = count + 1
+		go srv.myServeClient(newClient(cn), c, lambdaChannel)
+	}
+}
+
+// event handler
+func (srv *Server) myServeClient(c *Client, channel chan interface{}, lambdaChannel chan Req) {
+	cmdChannel := make(chan string, 1)
+
+	go myPeekCmd(c, cmdChannel)
+
+	// Release client on exit
+	defer c.release()
+
+	// Register client
+	srv.info.register(c)
+	defer srv.info.deregister(c.id)
+
+	// Init request/response loop
+	for !c.closed {
+		// set deadline
+		if d := srv.config.Timeout; d > 0 {
+			c.cn.SetDeadline(time.Now().Add(d))
+		}
+		select {
+		case cmd := <-cmdChannel:
+			fmt.Println("cmd is ", cmd)
+			newReq := Req{cmd, c.cmd}
+			lambdaChannel <- newReq
+		case b := <-channel:
+			fmt.Println("from client channel", b)
+			c.wr.AppendInt(1)
+			// flush buffer, return on errors
+			if err := c.wr.Flush(); err != nil {
+				return
+			}
+		}
+	}
+}
+
+// Accept conn
+// for lambda store use
+func (srv *Server) Accept(lis net.Listener) net.Conn {
+	cn, err := lis.Accept()
+	if err != nil {
+		fmt.Println(err)
+	}
+	return cn
+}
+
+// Lambda facing serve client
+// for lambda store use
+func (srv *Server) Serve_client(cn net.Conn) {
+	//for {
+	//	go srv.serveClient(newClient(cn))
+	//}
+	fmt.Println("in the lambda server")
+	srv.serveClient(newClient(cn))
+
 }
