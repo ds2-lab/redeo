@@ -192,14 +192,13 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 		}
 		c := make(chan interface{}, 1)
 		cMap[count] = c
-		count = count + 1
 		go srv.myServeClient(newClient(cn), c, count, lambdaChannel)
+		count = count + 1
 	}
 }
 
 // event handler
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
-	fmt.Println("channel is is", id)
 	cmdChannel := make(chan string, 1)
 
 	go myPeekCmd(c, cmdChannel)
@@ -219,14 +218,14 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		}
 		select {
 		case cmd := <-cmdChannel:
-			fmt.Println("cmd is ", cmd)
 			// construct new request
 			newReq := Req{cmd, c.cmd, id}
+			fmt.Println("id is ", id)
+			fmt.Println("newReq is ", newReq)
 			// send new request to lambda channel
 			lambdaChannel <- newReq
-			
 		case b := <-clientChannel:
-			fmt.Println("from client channel", b)
+			fmt.Println("final response is ", b)
 			c.wr.AppendInt(1)
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
