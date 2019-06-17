@@ -164,18 +164,19 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
 	for more := true; more; more = c.rd.Buffered() != 0 {
+		fmt.Println("Peeking cmd")
 		name, err := c.rd.PeekCmd()
 		if err != nil {
 			_ = c.rd.SkipCmd()
 		}
 		if c.cmd, err = c.readCmd(c.cmd); err != nil {
-			fmt.Print("read cmd err", err)
+			fmt.Println("read cmd err", err)
 		}
 
 		// flush when buffer is large enough
-		if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
-			err = c.wr.Flush()
-		}
+		//if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
+		//	err = c.wr.Flush()
+		//}
 		channel <- name
 	}
 	//return channel
@@ -186,6 +187,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 	// start counter to record client id, initial with 0
 	id := 0
 	for {
+
 		cn, err := lis.Accept()
 		if err != nil {
 			return err
@@ -209,7 +211,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 
 // event handler
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
-	fmt.Print("channel id is ", id)
+	fmt.Println("channel id is ", id)
 	cmdChannel := make(chan string, 1)
 
 	go myPeekCmd(c, cmdChannel)
@@ -236,7 +238,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			// send new request to lambda channel
 			lambdaChannel <- newReq
 		case b := <-clientChannel:
-			fmt.Println("final response is (id is) ", b)
+			fmt.Println("final response is ", b)
 			c.wr.AppendInt(1)
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
