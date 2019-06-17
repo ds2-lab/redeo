@@ -162,47 +162,31 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 	return
 }
 
-func (srv *Server) myPerform(c *Client, name string) (err error) {
-	norm := strings.ToLower(name)
-
-	// register call
-	srv.info.command(c.id, norm)
-
-	if c.cmd, err = c.readCmd(c.cmd); err != nil {
-		return
-	}
-	// flush when buffer is large enough
-	if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
-		err = c.wr.Flush()
-	}
-	return
-}
-
-func (srv *Server) myPeekCmd(c *Client, channel chan string) {
-	for more := true; more; more = c.rd.Buffered() != 0 {
-		fmt.Println("Peeking cmd")
-		name, err := c.rd.PeekCmd()
-		if err != nil {
-			_ = c.rd.SkipCmd()
-			fmt.Println("peeking err is ", err)
-		}
-		norm := strings.ToLower(name)
-		// register call
-		srv.info.command(c.id, norm)
-
-		if c.cmd, err = c.readCmd(c.cmd); err != nil {
-			fmt.Println("read cmd err", err)
-		}
-
-		fmt.Println("cmd name is ", name)
-		channel <- name
-		// flush when buffer is large enough
-		if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
-			err = c.wr.Flush()
-		}
-	}
-	//return channel
-}
+//func (srv *Server) myPeekCmd(c *Client, channel chan string) error {
+//	for more := true; more; more = c.rd.Buffered() != 0 {
+//		fmt.Println("Peeking cmd")
+//		name, err := c.rd.PeekCmd()
+//		if err != nil {
+//			_ = c.rd.SkipCmd()
+//			fmt.Println("peeking err is ", err)
+//		}
+//		norm := strings.ToLower(name)
+//		// register call
+//		srv.info.command(c.id, norm)
+//
+//		if c.cmd, err = c.readCmd(c.cmd); err != nil {
+//			fmt.Println("read cmd err", err)
+//		}
+//
+//		fmt.Println("cmd name is ", name)
+//		channel <- name
+//		// flush when buffer is large enough
+//		if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
+//			err = c.wr.Flush()
+//		}
+//	}
+//	return nil
+//}
 
 // new serve with channel initial
 func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
@@ -221,11 +205,13 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 				tc.SetKeepAlivePeriod(ka)
 			}
 		}
+
 		// make channel for every new client
 		c := make(chan interface{}, 1)
-		// store this channel to the channel map
+		// store the new client channel to the channel map
 		cMap[id] = c
 		go srv.myServeClient(newClient(cn), c, id, lambdaChannel)
+		// id increment by 1
 		id = id + 1
 	}
 }
@@ -273,20 +259,9 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 //	}
 //}
 
-func performPipeline(c *Client, fn func(string) error, channel chan string) {
-	// perform pipeline
-	if err := c.peek(fn, channel); err != nil {
-		c.wr.AppendError("ERR " + err.Error())
-
-		if !resp.IsProtocolError(err) {
-			_ = c.wr.Flush()
-			return
-		}
-	}
-}
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
-	fmt.Println("channel id is ", id)
-	cmdChannel := make(chan string, 1)
+	// make helper channel for every client
+	helper := make(chan string, 1)
 
 	// Release client on exit
 	defer c.release()
@@ -306,22 +281,21 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		if d := srv.config.Timeout; d > 0 {
 			c.cn.SetDeadline(time.Now().Add(d))
 		}
-		go performPipeline(c, perform, cmdChannel)
+
+		go myPeekCmd(c, perform, helper)
 
 		select {
-		case cmd := <-cmdChannel:
+		case cmd := <-helper: /* blocking on peeking cmd*/
 			// construct new request
 			newReq := Req{cmd, c.cmd, id}
-			//fmt.Println("command from server:", c.cmd)
 			fmt.Println("newReq is ", newReq)
 			// send new request to lambda channel
 			lambdaChannel <- newReq
-		case b := <-clientChannel:
-			fmt.Println("final response is ", b)
+		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
+			fmt.Println("final response is ", result)
 			c.wr.AppendInt(1)
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
-				fmt.Println("flush err2 is ", err)
 				return
 			}
 		}
@@ -333,8 +307,39 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 	}
 }
 
+// PeekCmd
+func myPeekCmd(c *Client, fn func(string) error, channel chan string) {
+	if err := c.peek(fn, channel); err != nil {
+		c.wr.AppendError("ERR " + err.Error())
+
+		if !resp.IsProtocolError(err) {
+			_ = c.wr.Flush()
+			return
+		}
+	}
+}
+
+func (srv *Server) myPerform(c *Client, name string) (err error) {
+	norm := strings.ToLower(name)
+
+	// register call
+	srv.info.command(c.id, norm)
+
+	if c.cmd, err = c.readCmd(c.cmd); err != nil {
+		return
+	}
+	// flush when buffer is large enough
+	if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
+		err = c.wr.Flush()
+	}
+	return
+}
+
+/*
+ * Lambda store part
+ */
+
 // Accept conn
-// for lambda store use
 func (srv *Server) Accept(lis net.Listener) net.Conn {
 	cn, err := lis.Accept()
 	if err != nil {
@@ -344,7 +349,6 @@ func (srv *Server) Accept(lis net.Listener) net.Conn {
 }
 
 // Lambda facing serve client
-// for lambda store use
 func (srv *Server) Serve_client(cn net.Conn) {
 	//for {
 	//	go srv.serveClient(newClient(cn))
