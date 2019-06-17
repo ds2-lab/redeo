@@ -201,7 +201,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 		// make channel for every new client
 		c := make(chan interface{}, 1)
 		// store this channel to the channel map
-		cMap[id] = make(chan interface{}, 1)
+		cMap[id] = c
 		go srv.myServeClient(newClient(cn), c, id, lambdaChannel)
 		id = id + 1
 	}
@@ -209,6 +209,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 
 // event handler
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
+	fmt.Print("channel id is ", id)
 	cmdChannel := make(chan string, 1)
 
 	go myPeekCmd(c, cmdChannel)
