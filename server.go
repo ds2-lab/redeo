@@ -168,8 +168,13 @@ func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
 		if err != nil {
 			_ = c.rd.SkipCmd()
 		}
+		if c.cmd, err = c.readCmd(c.cmd); err != nil {
+			fmt.Print("read cmd err", err)
+		}
+		if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
+			err = c.wr.Flush()
+		}
 		channel <- name
-		c.cmd, err = c.readCmd(c.cmd)
 	}
 	//return channel
 }
