@@ -171,6 +171,8 @@ func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
 		if c.cmd, err = c.readCmd(c.cmd); err != nil {
 			fmt.Print("read cmd err", err)
 		}
+
+		// flush when buffer is large enough
 		if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
 			err = c.wr.Flush()
 		}
@@ -181,7 +183,7 @@ func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
 
 // new serve with channel initial
 func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
-	// start counter to record client id
+	// start counter to record client id, initial with 0
 	id := 0
 	for {
 		cn, err := lis.Accept()
@@ -228,7 +230,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		case cmd := <-cmdChannel:
 			// construct new request
 			newReq := Req{cmd, c.cmd, id}
-			fmt.Println("command from server:", c.cmd)
+			//fmt.Println("command from server:", c.cmd)
 			fmt.Println("newReq is ", newReq)
 			// send new request to lambda channel
 			lambdaChannel <- newReq
