@@ -223,6 +223,8 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		case cmd := <-cmdChannel:
 			// construct new request
 			newReq := Req{cmd, c.cmd, id}
+			fmt.Println("command from server:", c.cmd)
+			fmt.Println("newReq is ", newReq)
 			// send new request to lambda channel
 			lambdaChannel <- newReq
 		case b := <-clientChannel:
