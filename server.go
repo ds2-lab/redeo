@@ -174,9 +174,9 @@ func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
 		}
 
 		// flush when buffer is large enough
-		//if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
-		//	err = c.wr.Flush()
-		//}
+		if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
+			err = c.wr.Flush()
+		}
 		channel <- name
 	}
 	//return channel
@@ -244,6 +244,10 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			if err := c.wr.Flush(); err != nil {
 				return
 			}
+		}
+		// flush buffer, return on errors
+		if err := c.wr.Flush(); err != nil {
+			return
 		}
 	}
 }
