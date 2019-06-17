@@ -176,7 +176,8 @@ func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
 
 // new serve with channel initial
 func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
-	count := 0
+	// start counter to record client id
+	id := 0
 	for {
 		cn, err := lis.Accept()
 		if err != nil {
@@ -190,10 +191,12 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 				tc.SetKeepAlivePeriod(ka)
 			}
 		}
+		// make channel for every new client
 		c := make(chan interface{}, 1)
-		cMap[count] = c
-		go srv.myServeClient(newClient(cn), c, count, lambdaChannel)
-		count = count + 1
+		// store this channel to the channel map
+		cMap[id] = make(chan interface{}, 1)
+		go srv.myServeClient(newClient(cn), c, id, lambdaChannel)
+		id = id + 1
 	}
 }
 
@@ -220,12 +223,10 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		case cmd := <-cmdChannel:
 			// construct new request
 			newReq := Req{cmd, c.cmd, id}
-			fmt.Println("id is ", id)
-			fmt.Println("newReq is ", newReq)
 			// send new request to lambda channel
 			lambdaChannel <- newReq
 		case b := <-clientChannel:
-			fmt.Println("final response is ", b)
+			fmt.Println("final response is (id is) ", b)
 			c.wr.AppendInt(1)
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
