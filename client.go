@@ -2,6 +2,7 @@ package redeo
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -102,6 +103,24 @@ func (c *Client) pipeline(fn func(string) error) error {
 		if err := fn(name); err != nil {
 			return err
 		}
+		fmt.Println("peed cmd name is ", name)
+	}
+	return nil
+}
+
+// modified
+func (c *Client) peek(fn func(string) error, channel chan string) error {
+	for more := true; more; more = c.rd.Buffered() != 0 {
+		name, err := c.rd.PeekCmd()
+		if err != nil {
+			_ = c.rd.SkipCmd()
+			return err
+		}
+		if err := fn(name); err != nil {
+			return err
+		}
+		//fmt.Println("peed cmd name is ", name)
+		channel <- name
 	}
 	return nil
 }

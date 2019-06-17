@@ -162,22 +162,44 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 	return
 }
 
-func myPeekCmd(c *Client, channel chan string) /*chan string*/ {
+func (srv *Server) myPerform(c *Client, name string) (err error) {
+	norm := strings.ToLower(name)
+
+	// register call
+	srv.info.command(c.id, norm)
+
+	if c.cmd, err = c.readCmd(c.cmd); err != nil {
+		return
+	}
+	// flush when buffer is large enough
+	if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
+		err = c.wr.Flush()
+	}
+	return
+}
+
+func (srv *Server) myPeekCmd(c *Client, channel chan string) {
 	for more := true; more; more = c.rd.Buffered() != 0 {
 		fmt.Println("Peeking cmd")
 		name, err := c.rd.PeekCmd()
 		if err != nil {
 			_ = c.rd.SkipCmd()
+			fmt.Println("peeking err is ", err)
 		}
+		norm := strings.ToLower(name)
+		// register call
+		srv.info.command(c.id, norm)
+
 		if c.cmd, err = c.readCmd(c.cmd); err != nil {
 			fmt.Println("read cmd err", err)
 		}
 
+		fmt.Println("cmd name is ", name)
+		channel <- name
 		// flush when buffer is large enough
 		if n := c.wr.Buffered(); n > resp.MaxBufferSize/2 {
 			err = c.wr.Flush()
 		}
-		channel <- name
 	}
 	//return channel
 }
@@ -187,7 +209,6 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 	// start counter to record client id, initial with 0
 	id := 0
 	for {
-
 		cn, err := lis.Accept()
 		if err != nil {
 			return err
@@ -210,11 +231,62 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 }
 
 // event handler
+//func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
+//	fmt.Println("channel id is ", id)
+//	cmdChannel := make(chan string, 1)
+//
+//	// Release client on exit
+//	defer c.release()
+//
+//	// Register client
+//	srv.info.register(c)
+//	defer srv.info.deregister(c.id)
+//
+//	// Init request/response loop
+//	for !c.closed {
+//		// set deadline
+//		if d := srv.config.Timeout; d > 0 {
+//			c.cn.SetDeadline(time.Now().Add(d))
+//		}
+//		go srv.myPeekCmd(c, cmdChannel)
+//
+//		//go func() {
+//		select {
+//		case cmd := <-cmdChannel:
+//			// construct new request
+//			newReq := Req{cmd, c.cmd, id}
+//			//fmt.Println("command from server:", c.cmd)
+//			fmt.Println("newReq is ", newReq)
+//			// send new request to lambda channel
+//			lambdaChannel <- newReq
+//		case b := <-clientChannel:
+//			fmt.Println("final response is ", b)
+//			c.wr.AppendInt(1)
+//			// flush buffer, return on errors
+//			if err := c.wr.Flush(); err != nil {
+//				fmt.Println("flush err2 is ", err)
+//				return
+//			}
+//		}
+//		//}()
+//
+//	}
+//}
+
+func performPipeline(c *Client, fn func(string) error, channel chan string) {
+	// perform pipeline
+	if err := c.peek(fn, channel); err != nil {
+		c.wr.AppendError("ERR " + err.Error())
+
+		if !resp.IsProtocolError(err) {
+			_ = c.wr.Flush()
+			return
+		}
+	}
+}
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
 	fmt.Println("channel id is ", id)
 	cmdChannel := make(chan string, 1)
-
-	go myPeekCmd(c, cmdChannel)
 
 	// Release client on exit
 	defer c.release()
@@ -223,12 +295,19 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 	srv.info.register(c)
 	defer srv.info.deregister(c.id)
 
+	// Create perform callback
+	perform := func(name string) error {
+		return srv.myPerform(c, name)
+	}
+
 	// Init request/response loop
 	for !c.closed {
 		// set deadline
 		if d := srv.config.Timeout; d > 0 {
 			c.cn.SetDeadline(time.Now().Add(d))
 		}
+		go performPipeline(c, perform, cmdChannel)
+
 		select {
 		case cmd := <-cmdChannel:
 			// construct new request
@@ -242,9 +321,11 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			c.wr.AppendInt(1)
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
+				fmt.Println("flush err2 is ", err)
 				return
 			}
 		}
+
 		// flush buffer, return on errors
 		if err := c.wr.Flush(); err != nil {
 			return
