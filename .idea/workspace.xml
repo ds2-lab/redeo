@@ -12,23 +12,22 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/client.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="692">
-              <caret line="109" column="17" selection-start-line="109" selection-start-column="17" selection-end-line="109" selection-end-column="17" />
+            <state relative-caret-position="216">
+              <caret line="81" column="23" selection-start-line="81" selection-start-column="23" selection-end-line="81" selection-end-column="23" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/server.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="173">
-              <caret line="164" selection-start-line="164" selection-end-line="164" />
+            <state relative-caret-position="279">
+              <caret line="166" column="19" selection-start-line="166" selection-start-column="8" selection-end-line="166" selection-end-column="19" />
               <folding>
                 <element signature="e#15#95#0" expanded="true" />
-                <element signature="e#3202#3272#0" />
                 <element signature="e#4542#4557#0" />
               </folding>
             </state>
@@ -43,6 +42,7 @@
       <find>flush</find>
       <find>lock</find>
       <find>ERR</find>
+      <find>fmt.Println</find>
     </findStrings>
   </component>
   <component name="GOROOT" path="/usr/local/Cellar/go/1.12/libexec" />
@@ -209,22 +209,21 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/client.go">
+    <entry file="file://$PROJECT_DIR$/server.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="692">
-          <caret line="109" column="17" selection-start-line="109" selection-start-column="17" selection-end-line="109" selection-end-column="17" />
+        <state relative-caret-position="279">
+          <caret line="166" column="19" selection-start-line="166" selection-start-column="8" selection-end-line="166" selection-end-column="19" />
+          <folding>
+            <element signature="e#15#95#0" expanded="true" />
+            <element signature="e#4542#4557#0" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/server.go">
+    <entry file="file://$PROJECT_DIR$/client.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="173">
-          <caret line="164" selection-start-line="164" selection-end-line="164" />
-          <folding>
-            <element signature="e#15#95#0" expanded="true" />
-            <element signature="e#3202#3272#0" />
-            <element signature="e#4542#4557#0" />
-          </folding>
+        <state relative-caret-position="216">
+          <caret line="81" column="23" selection-start-line="81" selection-start-column="23" selection-end-line="81" selection-end-column="23" />
         </state>
       </provider>
     </entry>

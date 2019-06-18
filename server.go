@@ -288,11 +288,11 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
 			// construct new request
 			newReq := Req{cmd, c.cmd, id}
-			fmt.Println("newReq is ", newReq)
+			//fmt.Println("newReq is ", newReq)
 			// send new request to lambda channel
 			lambdaChannel <- newReq
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
-			fmt.Println("final response is ", result)
+			//fmt.Println("final response is ", result)
 			c.wr.AppendBulkString(result.(string))
 			//c.wr.AppendInt(result)
 			// flush buffer, return on errors
