@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3e06fb2b-254d-443b-abe0-f3c1797ef0e7" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/client.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/server.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -16,8 +15,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="546">
-              <caret line="124" lean-forward="true" selection-start-line="124" selection-end-line="124" />
+            <state relative-caret-position="692">
+              <caret line="109" column="17" selection-start-line="109" selection-start-column="17" selection-end-line="109" selection-end-column="17" />
             </state>
           </provider>
         </entry>
@@ -25,10 +24,12 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2042">
-              <caret line="309" column="10" lean-forward="true" selection-start-line="309" selection-start-column="10" selection-end-line="309" selection-end-column="10" />
+            <state relative-caret-position="173">
+              <caret line="164" selection-start-line="164" selection-end-line="164" />
               <folding>
                 <element signature="e#15#95#0" expanded="true" />
+                <element signature="e#3202#3272#0" />
+                <element signature="e#4542#4557#0" />
               </folding>
             </state>
           </provider>
@@ -41,6 +42,7 @@
       <find>rd</find>
       <find>flush</find>
       <find>lock</find>
+      <find>ERR</find>
     </findStrings>
   </component>
   <component name="GOROOT" path="/usr/local/Cellar/go/1.12/libexec" />
@@ -59,8 +61,8 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6" fullScreen="true">
-    <option name="width" value="714" />
+  <component name="ProjectFrameBounds" fullScreen="true">
+    <option name="width" value="1440" />
     <option name="height" value="900" />
   </component>
   <component name="ProjectView">
@@ -105,11 +107,11 @@
     </option>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1440" height="900" extended-state="6" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4373494" visible="true" weight="0.22103004" />
-      <window_info id="Structure" order="1" sideWeight="0.5626506" side_tool="true" weight="0.22103004" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.4373494" visible="true" weight="0.22103004" />
+      <window_info active="true" id="Structure" order="1" sideWeight="0.5626506" side_tool="true" visible="true" weight="0.22103004" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
@@ -209,17 +211,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/client.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="546">
-          <caret line="124" lean-forward="true" selection-start-line="124" selection-end-line="124" />
+        <state relative-caret-position="692">
+          <caret line="109" column="17" selection-start-line="109" selection-start-column="17" selection-end-line="109" selection-end-column="17" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/server.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2042">
-          <caret line="309" column="10" lean-forward="true" selection-start-line="309" selection-start-column="10" selection-end-line="309" selection-end-column="10" />
+        <state relative-caret-position="173">
+          <caret line="164" selection-start-line="164" selection-end-line="164" />
           <folding>
             <element signature="e#15#95#0" expanded="true" />
+            <element signature="e#3202#3272#0" />
+            <element signature="e#4542#4557#0" />
           </folding>
         </state>
       </provider>

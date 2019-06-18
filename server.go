@@ -216,7 +216,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 	}
 }
 
-// event handler
+//event handler
 //func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
 //	fmt.Println("channel id is ", id)
 //	cmdChannel := make(chan string, 1)
@@ -285,7 +285,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		go myPeekCmd(c, perform, helper)
 
 		select {
-		case cmd := <-helper: /* blocking on peeking cmd*/
+		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
 			// construct new request
 			newReq := Req{cmd, c.cmd, id}
 			fmt.Println("newReq is ", newReq)
@@ -293,7 +293,8 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			lambdaChannel <- newReq
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
 			fmt.Println("final response is ", result)
-			c.wr.AppendInt(1)
+			c.wr.AppendBulkString(result.(string))
+			//c.wr.AppendInt(result)
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
 				return
@@ -311,7 +312,6 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 func myPeekCmd(c *Client, fn func(string) error, channel chan string) {
 	if err := c.peek(fn, channel); err != nil {
 		c.wr.AppendError("ERR " + err.Error())
-
 		if !resp.IsProtocolError(err) {
 			_ = c.wr.Flush()
 			return
