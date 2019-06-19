@@ -261,7 +261,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
 	// make helper channel for every client
-	helper := make(chan string, 1)
+	helper := make(chan string, 1024*1024)
 
 	// Release client on exit
 	defer c.release()
