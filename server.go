@@ -275,7 +275,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 	perform := func(name string) error {
 		return srv.myPerform(c, name)
 	}
-
+	// go routine peeking cmd
 	go myPeekCmd(c, perform, helper)
 
 	// Init request/response loop
@@ -284,8 +284,6 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		if d := srv.config.Timeout; d > 0 {
 			c.cn.SetDeadline(time.Now().Add(d))
 		}
-
-		// go routine peeking cmd
 
 		select {
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
@@ -313,12 +311,14 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 
 // PeekCmd
 func myPeekCmd(c *Client, fn func(string) error, channel chan string) {
-	if err := c.peek(fn, channel); err != nil {
-		c.wr.AppendError("ERR " + err.Error())
-		if !resp.IsProtocolError(err) {
-			fmt.Println("flush err", err)
-			_ = c.wr.Flush()
-			return
+	for {
+		if err := c.peek(fn, channel); err != nil {
+			c.wr.AppendError("ERR " + err.Error())
+			if !resp.IsProtocolError(err) {
+				fmt.Println("flush err", err)
+				_ = c.wr.Flush()
+				return
+			}
 		}
 	}
 }
