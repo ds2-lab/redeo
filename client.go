@@ -114,9 +114,11 @@ func (c *Client) peek(fn func(string) error, channel chan string) error {
 		name, err := c.rd.PeekCmd()
 		if err != nil {
 			_ = c.rd.SkipCmd()
+			fmt.Println("err1", err)
 			return err
 		}
 		if err := fn(name); err != nil {
+			fmt.Println("err2", err)
 			return err
 		}
 		// send the cmd name to the helper channel
