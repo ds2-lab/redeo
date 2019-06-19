@@ -2,6 +2,7 @@ package redeo
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -108,6 +109,7 @@ func (c *Client) pipeline(fn func(string) error) error {
 
 // modified client peek cmd with helper channel
 func (c *Client) peek(fn func(string) error, channel chan string) error {
+	fmt.Println("peeking cmd")
 	for more := true; more; more = c.rd.Buffered() != 0 {
 		name, err := c.rd.PeekCmd()
 		if err != nil {
@@ -117,6 +119,7 @@ func (c *Client) peek(fn func(string) error, channel chan string) error {
 		if err := fn(name); err != nil {
 			return err
 		}
+		fmt.Println("cmd name is", name)
 		// send the cmd name to the helper channel
 		channel <- name
 	}

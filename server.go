@@ -265,6 +265,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 
 	// Release client on exit
 	defer c.release()
+	defer close(helper)
 
 	// Register client
 	srv.info.register(c)
@@ -282,6 +283,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			c.cn.SetDeadline(time.Now().Add(d))
 		}
 
+		// go routine peeking cmd
 		go myPeekCmd(c, perform, helper)
 
 		select {
