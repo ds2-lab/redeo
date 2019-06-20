@@ -315,7 +315,7 @@ func myPeekCmd(c *Client, fn func(string) error, channel chan string) {
 		if err := c.peek(fn, channel); err != nil {
 			c.wr.AppendError("ERR " + err.Error())
 			if !resp.IsProtocolError(err) {
-				fmt.Println("flush err", err)
+				//fmt.Println("flush err", err)
 				_ = c.wr.Flush()
 				return
 			}
