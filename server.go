@@ -207,7 +207,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 		}
 
 		// make channel for every new client
-		c := make(chan interface{}, 1)
+		c := make(chan interface{}, 1024*1024)
 		// store the new client channel to the channel map
 		cMap[id] = c
 		go srv.myServeClient(newClient(cn), c, id, lambdaChannel)
@@ -265,7 +265,9 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 
 	// Release client on exit
 	defer c.release()
+	// close client and helper channel
 	defer close(helper)
+	defer close(clientChannel)
 
 	// Register client
 	srv.info.register(c)
@@ -309,10 +311,10 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 	}
 }
 
-// PeekCmd
+// client peeking Cmd
 func myPeekCmd(c *Client, fn func(string) error, channel chan string) {
 	for {
-		if err := c.peek(fn, channel); err != nil {
+		if err := c.peekcmd(fn, channel); err != nil {
 			c.wr.AppendError("ERR " + err.Error())
 			if !resp.IsProtocolError(err) {
 				//fmt.Println("flush err", err)
@@ -354,10 +356,6 @@ func (srv *Server) Accept(lis net.Listener) net.Conn {
 
 // Lambda facing serve client
 func (srv *Server) Serve_client(cn net.Conn) {
-	//for {
-	//	go srv.serveClient(newClient(cn))
-	//}
 	fmt.Println("in the lambda server")
 	srv.serveClient(newClient(cn))
-
 }

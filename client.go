@@ -107,21 +107,21 @@ func (c *Client) pipeline(fn func(string) error) error {
 }
 
 // modified client peek cmd with helper channel
-func (c *Client) peek(fn func(string) error, channel chan string) error {
+func (c *Client) peekcmd(fn func(string) error, channel chan string) error {
 	for more := true; more; more = c.rd.Buffered() != 0 {
 		//fmt.Println("peeking cmd name...")
-		name, err := c.rd.PeekCmd()
+		cmdName, err := c.rd.PeekCmd()
 		if err != nil {
 			_ = c.rd.SkipCmd()
 			//fmt.Println("err1", err)
 			return err
 		}
-		if err := fn(name); err != nil {
+		if err := fn(cmdName); err != nil {
 			//fmt.Println("err2", err)
 			return err
 		}
 		// send the cmd name to the helper channel
-		channel <- name
+		channel <- cmdName
 	}
 	return nil
 }
