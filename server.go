@@ -266,8 +266,8 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 	// Release client on exit
 	defer c.release()
 	// close client and helper channel
-	defer close(helper)
-	defer close(clientChannel)
+	//defer close(helper)
+	//defer close(clientChannel)
 
 	// Register client
 	srv.info.register(c)
