@@ -2,7 +2,6 @@ package redeo
 
 import (
 	"context"
-	"fmt"
 	"github.com/bsm/redeo/resp"
 	"net"
 	"sync"
@@ -93,19 +92,13 @@ func (c *Client) streamCmd(cmd *resp.CommandStream) (*resp.CommandStream, error)
 }
 
 func (c *Client) pipeline(fn func(string) error) error {
-	fmt.Println("in client pipline")
 	for more := true; more; more = c.rd.Buffered() != 0 {
 		name, err := c.rd.PeekCmd()
-		fmt.Println("finally returned from PeekCmd.....")
 		if err != nil {
 			_ = c.rd.SkipCmd()
-			fmt.Println("peek cmd err", err)
 			return err
 		}
-		fmt.Println("cmd name is ", name)
-
 		if err := fn(name); err != nil {
-			fmt.Println("handler err", err)
 			return err
 		}
 	}
@@ -113,7 +106,7 @@ func (c *Client) pipeline(fn func(string) error) error {
 }
 
 // modified client peek cmd with helper channel
-func (c *Client) peekcmd(fn func(string) error, channel chan string) error {
+func (c *Client) peekCmd(fn func(string) error, channel chan string) error {
 	for more := true; more; more = c.rd.Buffered() != 0 {
 		//fmt.Println("peeking cmd name...")
 		cmdName, err := c.rd.PeekCmd()

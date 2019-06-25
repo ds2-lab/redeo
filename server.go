@@ -97,8 +97,6 @@ func (srv *Server) serveClient(c *Client) {
 	perform := func(name string) error {
 		return srv.perform(c, name)
 	}
-
-	fmt.Println("in serverClient")
 	// Init request/response loop
 	for !c.closed {
 		// set deadline
@@ -315,10 +313,9 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 // client peeking Cmd
 func myPeekCmd(c *Client, fn func(string) error, channel chan string) {
 	for {
-		if err := c.peekcmd(fn, channel); err != nil {
+		if err := c.peekCmd(fn, channel); err != nil {
 			c.wr.AppendError("ERR " + err.Error())
 			if !resp.IsProtocolError(err) {
-				//fmt.Println("flush err", err)
 				_ = c.wr.Flush()
 				return
 			}
@@ -357,6 +354,6 @@ func (srv *Server) Accept(lis net.Listener) net.Conn {
 
 // Lambda facing serve client
 func (srv *Server) Serve_client(cn net.Conn) {
-	fmt.Println("in the lambda server")
+	//fmt.Println("in the lambda server")
 	srv.serveClient(newClient(cn))
 }
