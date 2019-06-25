@@ -2,11 +2,11 @@ package redeo
 
 import (
 	"context"
+	"fmt"
+	"github.com/bsm/redeo/resp"
 	"net"
 	"sync"
 	"sync/atomic"
-
-	"github.com/bsm/redeo/resp"
 )
 
 var (
