@@ -96,7 +96,7 @@ func (c *Client) pipeline(fn func(string) error) error {
 	fmt.Println("in client pipline")
 	for more := true; more; more = c.rd.Buffered() != 0 {
 		name, err := c.rd.PeekCmd()
-		fmt.Println("finally returned from PeekCmd...")
+		fmt.Println("finally returned from PeekCmd.....")
 		if err != nil {
 			_ = c.rd.SkipCmd()
 			fmt.Println("peek cmd err", err)
