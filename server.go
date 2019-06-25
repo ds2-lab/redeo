@@ -98,6 +98,7 @@ func (srv *Server) serveClient(c *Client) {
 		return srv.perform(c, name)
 	}
 
+	fmt.Println("in serverClient")
 	// Init request/response loop
 	for !c.closed {
 		// set deadline
