@@ -187,7 +187,8 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 //	return nil
 //}
 
-// new serve with channel initial
+// new serve with channel initial，creating a
+// new service goroutine for each.
 func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
 	// start counter to record client id, initial with 0
 	id := 0
@@ -259,6 +260,8 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 //}
 
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
+	fmt.Println("server serving client...")
+	fmt.Println("client id is ", id)
 	// make helper channel for every client
 	helper := make(chan string, 1024*1024)
 
