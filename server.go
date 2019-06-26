@@ -3,6 +3,7 @@ package redeo
 import (
 	"fmt"
 	"github.com/bsm/redeo/resp"
+	"github.com/klauspost/reedsolomon"
 	"net"
 	"strings"
 	"sync"
@@ -22,6 +23,29 @@ type Req struct {
 	Cmd      string
 	Argument *resp.Command
 	Cid      int
+}
+
+type SetReq struct {
+	Cmd string
+	Key []byte
+	Val []byte
+	Cid int
+}
+
+type Response struct {
+	Id   string
+	Body string
+}
+
+type LambdaInstance struct {
+	Name      string
+	Alive     bool
+	Cn        net.Conn
+	W         *resp.RequestWriter
+	R         resp.ResponseReader
+	C         chan SetReq
+	Peek      chan Response
+	AliveLock sync.Mutex
 }
 
 // NewServer creates a new server instance
@@ -189,7 +213,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaChannel chan Req) error {
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaGroup []map[int]LambdaInstance) error {
 	// start counter to record client id, initial with 0
 	id := 0
 	for {
@@ -210,7 +234,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 		c := make(chan interface{}, 1024*1024)
 		// store the new client channel to the channel map
 		cMap[id] = c
-		go srv.myServeClient(newClient(cn), c, id, lambdaChannel)
+		go srv.myServeClient(newClient(cn), c, id, lambdaGroup)
 		// id increment by 1
 		id = id + 1
 	}
@@ -259,7 +283,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 //	}
 //}
 
-func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaChannel chan Req) {
+func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaGroup []map[int]LambdaInstance) {
 	fmt.Println("server serving client...")
 	fmt.Println("client id is ", id)
 	// make helper channel for every client
@@ -291,11 +315,34 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 
 		select {
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
-			// construct new request
-			newReq := Req{cmd, c.cmd, id}
-			//fmt.Println("newReq is ", newReq)
+			// receive request from client and construct new request with id
+			//newReq := Req{cmd, c.cmd, id}
+			key := c.cmd.Arg(0)
+			val := c.cmd.Arg(1)
+			// ec encoding
+			enc, err := reedsolomon.New(10, 3)
+			if err != nil {
+				fmt.Println(err)
+			}
+			shards, err := enc.Split(val)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Printf("File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
+			// Encode parity
+			err = enc.Encode(shards)
+			if err != nil {
+				fmt.Println(err)
+			}
+			ok, err := enc.Verify(shards)
+			fmt.Println("encode status is", ok)
+			for i, shard := range shards {
+				newReq := SetReq{cmd, key, shard, id}
+				lambdaGroup[0][i].C <- newReq
+			}
+
 			// send new request to lambda channel
-			lambdaChannel <- newReq
+			//lambdaChannel <- newReq
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
 			c.wr.AppendBulkString(result.(string))
 			//fmt.Println("final response is ", result)
