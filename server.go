@@ -3,6 +3,7 @@ package redeo
 import (
 	"fmt"
 	"github.com/bsm/redeo/resp"
+	"github.com/cornelk/hashmap"
 	"github.com/klauspost/reedsolomon"
 	"net"
 	"strings"
@@ -39,6 +40,7 @@ type Response struct {
 
 type LambdaInstance struct {
 	Name      string
+	id        int
 	Alive     bool
 	Cn        net.Conn
 	W         *resp.RequestWriter
@@ -46,6 +48,7 @@ type LambdaInstance struct {
 	C         chan SetReq
 	Peek      chan Response
 	AliveLock sync.Mutex
+	Counter   uint64
 }
 
 // NewServer creates a new server instance
@@ -213,7 +216,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaGroup []map[int]LambdaInstance) error {
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lambdaGroup *hashmap.HashMap) error {
 	// start counter to record client id, initial with 0
 	id := 0
 	for {
@@ -283,7 +286,8 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, lamb
 //	}
 //}
 
-func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaGroup []map[int]LambdaInstance) {
+// client handler
+func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, lambdaGroup *hashmap.HashMap) {
 	fmt.Println("server serving client...")
 	fmt.Println("client id is ", id)
 	// make helper channel for every client
@@ -338,12 +342,15 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			}
 			ok, err := enc.Verify(shards)
 			fmt.Println("encode status is", ok)
+			group, ok := lambdaGroup.Get(0)
 			for i, shard := range shards {
 				fmt.Println("the ", i, "th shard is ", shard)
 				newReq := SetReq{cmd, key, shard, id}
-				lambdaGroup[0][i].C <- newReq
+				if ok == false {
+					fmt.Println("get lambda instance failed")
+				}
+				group.([]LambdaInstance)[i].C <- newReq
 			}
-
 			// send new request to lambda channel
 			//lambdaChannel <- newReq
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
