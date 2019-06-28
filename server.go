@@ -355,7 +355,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			for i, shard := range shards {
 				fmt.Println("the ", i, "th shard is ", shard)
 				newReq := SetReq{cmd, key, shard, id}
-				group.([]LambdaInstance)[i].C <- newReq
+				group.(Group).Arr[i].C <- newReq
 			}
 			mappingTable.Set(key, group)
 			// send new request to lambda channel
