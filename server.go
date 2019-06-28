@@ -2,9 +2,9 @@ package redeo
 
 import (
 	"fmt"
-	"github.com/bsm/redeo/resp"
 	"github.com/cornelk/hashmap"
 	"github.com/klauspost/reedsolomon"
+	"github.com/wangaoone/redeo/resp"
 	"net"
 	"strings"
 	"sync"

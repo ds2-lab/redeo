@@ -158,6 +158,15 @@ func (w *RequestWriter) WriteCmd(cmd string, args ...[]byte) {
 	}
 }
 
+func (w *RequestWriter) MyWriteCmd(cmd string, id string, args ...[]byte) {
+	w.w.AppendArrayLen(len(args) + 2)
+	w.w.AppendBulkString(cmd)
+	w.w.AppendBulkString(id)
+	for _, arg := range args {
+		w.w.AppendBulk(arg)
+	}
+}
+
 // WriteCmdString writes a full command as part of a pipeline. To execute the pipeline,
 // you must call Flush.
 func (w *RequestWriter) WriteCmdString(cmd string, args ...string) {
