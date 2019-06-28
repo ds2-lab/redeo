@@ -258,10 +258,10 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
 			// receive request from client and construct new request with id
 			//newReq := Req{cmd, c.cmd, id}
-			fmt.Println("cmd is ", cmd, c.cmd, id)
+			//fmt.Println("cmd is ", cmd, c.cmd, id)
 			key := c.cmd.Arg(0)
 			val := c.cmd.Arg(1)
-			fmt.Println("key, val ", key, val)
+			//fmt.Println("key, val ", key, val)
 			// ec encoding
 			enc, err := reedsolomon.New(10, 3)
 			if err != nil {
@@ -271,7 +271,6 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Printf("File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
 			// Encode parity
 			err = enc.Encode(shards)
 			if err != nil {
@@ -279,6 +278,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 			}
 			ok, err := enc.Verify(shards)
 			fmt.Println("encode status is", ok)
+			fmt.Printf("File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
 			// send every shard to the every lambda instance in group
 			group, ok := mappingTable.Get(0)
 			if ok == false {
