@@ -40,8 +40,9 @@ type Response struct {
 }
 
 type Group struct {
-	Arr []LambdaInstance
-	C   chan Response
+	Arr        []LambdaInstance
+	ChunkTable map[string][]string
+	C          chan Response
 }
 
 type LambdaInstance struct {
