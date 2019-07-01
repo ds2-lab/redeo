@@ -158,10 +158,11 @@ func (w *RequestWriter) WriteCmd(cmd string, args ...[]byte) {
 	}
 }
 
-func (w *RequestWriter) MyWriteCmd(cmd string, id string, args ...[]byte) {
-	w.w.AppendArrayLen(len(args) + 2)
+func (w *RequestWriter) MyWriteCmd(cmd string, clientId string, chunkId string, args ...[]byte) {
+	w.w.AppendArrayLen(len(args) + 3)
 	w.w.AppendBulkString(cmd)
-	w.w.AppendBulkString(id)
+	w.w.AppendBulkString(clientId)
+	w.w.AppendBulkString(chunkId)
 	for _, arg := range args {
 		w.w.AppendBulk(arg)
 	}

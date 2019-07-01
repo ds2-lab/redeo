@@ -27,21 +27,23 @@ type Req struct {
 }
 
 type SetReq struct {
-	Cmd string
-	Key []byte
-	Val []byte
-	Cid int
+	Cmd      string
+	Key      []byte
+	Val      []byte
+	ClientId int
+	ChunkId  int
 }
 
 type Response struct {
-	Id   string
-	Key  string
-	Body string
+	ClientId string
+	ChunkId  int64
+	Key      string
+	Body     []byte
 }
 
 type Group struct {
 	Arr        []LambdaInstance
-	ChunkTable map[string][]string
+	ChunkTable map[string][][]byte
 	C          chan Response
 }
 
@@ -286,7 +288,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 				fmt.Println("get lambda instance failed")
 			}
 			for i, shard := range shards {
-				newReq := SetReq{cmd, key, shard, id}
+				newReq := SetReq{cmd, key, shard, id, i}
 				// send new request to lambda channel
 				group.(Group).Arr[i].C <- newReq
 				fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
