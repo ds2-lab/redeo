@@ -22,12 +22,6 @@ type Server struct {
 
 type Req struct {
 	Cmd      string
-	Argument *resp.Command
-	Cid      int
-}
-
-type SetReq struct {
-	Cmd      string
 	Key      []byte
 	Val      []byte
 	ClientId int
@@ -54,7 +48,7 @@ type LambdaInstance struct {
 	Cn        net.Conn
 	W         *resp.RequestWriter
 	R         resp.ResponseReader
-	C         chan SetReq
+	C         chan Req
 	Peek      chan Response
 	AliveLock sync.Mutex
 	Counter   uint64
@@ -255,43 +249,48 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 		if d := srv.config.Timeout; d > 0 {
 			c.cn.SetDeadline(time.Now().Add(d))
 		}
-
+		group, ok := mappingTable.Get(0)
+		if ok == false {
+			fmt.Println("get lambda instance failed")
+		}
 		select {
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
-			// receive request from client and construct new request with id
-			//newReq := Req{cmd, c.cmd, id}
-			//fmt.Println("cmd is ", cmd, c.cmd, id)
+			// receive request from client
 			key := c.cmd.Arg(0)
 			val := c.cmd.Arg(1)
-			//fmt.Println("key, val ", key, val)
-			// ec encoding
-			enc, err := reedsolomon.New(10, 3)
-			if err != nil {
-				fmt.Println(err)
+			if val != nil {
+				// ec encoding
+				enc, err := reedsolomon.New(10, 3)
+				if err != nil {
+					fmt.Println(err)
+				}
+				shards, err := enc.Split(val)
+				if err != nil {
+					fmt.Println(err)
+				}
+				// Encode parity
+				err = enc.Encode(shards)
+				if err != nil {
+					fmt.Println(err)
+				}
+				ok, err := enc.Verify(shards)
+				fmt.Printf("encode status is", ok, "File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
+				// find available lambda group
+				// send every shard to the every lambda instance in group
+				for i, shard := range shards {
+					newReq := Req{cmd, key, shard, id, i}
+					// send new request to lambda channel
+					group.(Group).Arr[i].C <- newReq
+					fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
+				}
+			} else {
+				for j := 0; j < 13; j++ {
+					newReq := Req{cmd, key, nil, id, j}
+					// send new request to lambda channel
+					group.(Group).Arr[j].C <- newReq
+				}
 			}
-			shards, err := enc.Split(val)
-			if err != nil {
-				fmt.Println(err)
-			}
-			// Encode parity
-			err = enc.Encode(shards)
-			if err != nil {
-				fmt.Println(err)
-			}
-			ok, err := enc.Verify(shards)
-			fmt.Printf("encode status is", ok, "File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
-			// send every shard to the every lambda instance in group
-			group, ok := mappingTable.Get(0)
-			if ok == false {
-				fmt.Println("get lambda instance failed")
-			}
-			for i, shard := range shards {
-				newReq := SetReq{cmd, key, shard, id, i}
-				// send new request to lambda channel
-				group.(Group).Arr[i].C <- newReq
-				fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
-			}
-			//mappingTable.Set(key, group)
+
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
 			c.wr.AppendBulkString(result.(string))
 			//fmt.Println("final response is ", result)
