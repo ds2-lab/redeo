@@ -228,7 +228,6 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, mapp
 
 // client handler
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, mappingTable *hashmap.HashMap) {
-	fmt.Println("server serving client...")
 	fmt.Println("client id is ", id)
 	// make helper channel for every client
 	helper := make(chan string, 1024*1024)
@@ -280,8 +279,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 				fmt.Println(err)
 			}
 			ok, err := enc.Verify(shards)
-			fmt.Println("encode status is", ok)
-			fmt.Printf("File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
+			fmt.Printf("encode status is", ok, "File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
 			// send every shard to the every lambda instance in group
 			group, ok := mappingTable.Get(0)
 			if ok == false {
