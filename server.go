@@ -11,6 +11,13 @@ import (
 	"time"
 )
 
+const (
+	DataShard     = 10
+	ParityShard   = 3
+	LambdaMem     = 3000
+	GroupCapacity = LambdaMem * (DataShard + ParityShard) * 1000000
+)
+
 // Server configuration
 type Server struct {
 	config *Config
@@ -36,9 +43,12 @@ type Response struct {
 }
 
 type Group struct {
-	Arr        []LambdaInstance
-	ChunkTable map[string][][]byte
-	C          chan Response
+	Arr          []LambdaInstance
+	ChunkTable   map[string][][]byte
+	C            chan Response
+	MemCounter   uint64
+	ChunkCounter int
+	Lock         sync.Mutex
 }
 
 type LambdaInstance struct {
@@ -224,7 +234,6 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, mapp
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, mappingTable *hashmap.HashMap) {
 	fmt.Println("client id is ", id)
 	// make helper channel for every client
-	helper := make(chan string, 1024*1024)
 
 	// Release client on exit
 	defer c.release()
@@ -236,31 +245,36 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 	srv.info.register(c)
 	defer srv.info.deregister(c.id)
 
+	helper := make(chan string, 1024*1024)
 	// Create perform callback
 	perform := func(name string) error {
 		return srv.myPerform(c, name)
 	}
 	// go routine peeking cmd
 	go myPeekCmd(c, perform, helper)
-
 	// Init request/response loop
 	for !c.closed {
-		// set deadline
-		if d := srv.config.Timeout; d > 0 {
-			c.cn.SetDeadline(time.Now().Add(d))
-		}
+		// find available group
 		group, ok := mappingTable.Get(0)
 		if ok == false {
 			fmt.Println("get lambda instance failed")
+		}
+		if group.(Group).MemCounter > GroupCapacity*0.8 {
+			// initial a new group
+			// store this group to the mappingTable
+		}
+		// set deadline
+		if d := srv.config.Timeout; d > 0 {
+			c.cn.SetDeadline(time.Now().Add(d))
 		}
 		select {
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
 			// receive request from client
 			key := c.cmd.Arg(0)
 			val := c.cmd.Arg(1)
-			if val != nil {
+			if val != nil { /* SET, val passed in*/
 				// ec encoding
-				enc, err := reedsolomon.New(10, 3)
+				enc, err := reedsolomon.New(DataShard, ParityShard)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -283,14 +297,13 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 					group.(Group).Arr[i].C <- newReq
 					fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
 				}
-			} else {
-				for j := 0; j < 13; j++ {
+			} else { /* GET, no val passed in*/
+				for j := 0; j < DataShard+ParityShard; j++ {
 					newReq := Req{cmd, key, nil, id, j}
 					// send new request to lambda channel
 					group.(Group).Arr[j].C <- newReq
 				}
 			}
-
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
 			c.wr.AppendBulkString(result.(string))
 			//fmt.Println("final response is ", result)
