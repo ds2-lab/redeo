@@ -27,28 +27,36 @@ type Server struct {
 	mu   sync.RWMutex
 }
 
-type Req struct {
-	Cmd      string
-	Key      []byte
-	Val      []byte
+type Index struct {
 	ClientId int
+	ReqId    int
+}
+type Id struct {
+	ClientId int
+	ReqId    int
 	ChunkId  int
+}
+type Req struct {
+	Id  Id
+	Cmd string
+	Key []byte
+	Val []byte
 }
 
 type Response struct {
-	ClientId string
-	ChunkId  int64
-	Key      string
-	Body     []byte
+	Id Id
+	//ChunkId int64
+	Key  string
+	Body []byte
 }
 
 type Group struct {
 	Arr          []LambdaInstance
-	ChunkTable   map[string][][]byte
+	ChunkTable   map[Index][][]byte
 	C            chan Response
 	MemCounter   uint64
 	ChunkCounter int
-	Lock         sync.Mutex
+	//Lock         *sync.Mutex
 }
 
 type LambdaInstance struct {
@@ -62,6 +70,10 @@ type LambdaInstance struct {
 	Peek      chan Response
 	AliveLock sync.Mutex
 	Counter   uint64
+}
+
+func (group Group) IncrementCounter() {
+	group.ChunkCounter += 1
 }
 
 // NewServer creates a new server instance
@@ -231,8 +243,8 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, mapp
 }
 
 // client handler
-func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id int, mappingTable *hashmap.HashMap) {
-	fmt.Println("client id is ", id)
+func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clientId int, mappingTable *hashmap.HashMap) {
+	fmt.Println("client id is ", clientId)
 	// make helper channel for every client
 
 	// Release client on exit
@@ -252,29 +264,26 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 	}
 	// go routine peeking cmd
 	go myPeekCmd(c, perform, helper)
+
+	reqId := 0
 	// Init request/response loop
 	for !c.closed {
-		// find available group
-		group, ok := mappingTable.Get(0)
-		if ok == false {
-			fmt.Println("get lambda instance failed")
-		}
-		if group.(Group).MemCounter > GroupCapacity*0.8 {
-			// initial a new group
-			// store this group to the mappingTable
-		}
 		// set deadline
 		if d := srv.config.Timeout; d > 0 {
 			c.cn.SetDeadline(time.Now().Add(d))
+		}
+		group, ok := mappingTable.Get(0)
+		if ok == false {
+			fmt.Println("get lambda instance failed")
 		}
 		select {
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
 			// receive request from client
 			key := c.cmd.Arg(0)
 			val := c.cmd.Arg(1)
-			if val != nil { /* SET, val passed in*/
+			if val != nil { /* val != nil, SET handler */
 				// ec encoding
-				enc, err := reedsolomon.New(DataShard, ParityShard)
+				enc, err := reedsolomon.New(10, 3, reedsolomon.WithMaxGoroutines(64))
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -288,22 +297,24 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, id i
 					fmt.Println(err)
 				}
 				ok, err := enc.Verify(shards)
-				fmt.Printf("encode status is", ok, "File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
+				fmt.Println("verify status is ", ok)
+				//fmt.Printf("encode status is", ok, "File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
 				// find available lambda group
 				// send every shard to the every lambda instance in group
 				for i, shard := range shards {
-					newReq := Req{cmd, key, shard, id, i}
+					newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: i}, cmd, key, shard}
 					// send new request to lambda channel
-					group.(Group).Arr[i].C <- newReq
-					fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
+					group.(*Group).Arr[i].C <- newReq
+					//fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
 				}
-			} else { /* GET, no val passed in*/
-				for j := 0; j < DataShard+ParityShard; j++ {
-					newReq := Req{cmd, key, nil, id, j}
+			} else { /* val == nil, GET handler */
+				for j := 0; j < 13; j++ {
+					newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: j}, cmd, key, nil}
 					// send new request to lambda channel
-					group.(Group).Arr[j].C <- newReq
+					group.(*Group).Arr[j].C <- newReq
 				}
 			}
+			reqId += 1
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
 			c.wr.AppendBulkString(result.(string))
 			//fmt.Println("final response is ", result)
