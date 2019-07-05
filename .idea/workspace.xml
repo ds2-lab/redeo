@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3e06fb2b-254d-443b-abe0-f3c1797ef0e7" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/server.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -16,8 +15,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="473">
-              <caret line="58" column="17" selection-start-line="58" selection-start-column="17" selection-end-line="58" selection-end-column="17" />
+            <state relative-caret-position="5461">
+              <caret line="327" column="41" lean-forward="true" selection-start-line="327" selection-start-column="41" selection-end-line="327" selection-end-column="41" />
               <folding>
                 <element signature="e#15#167#0" expanded="true" />
               </folding>
@@ -49,6 +48,8 @@
       <find>(Group)</find>
       <find>reedsolomon.New</find>
       <find>fmt</find>
+      <find>13</find>
+      <find>14</find>
     </findStrings>
   </component>
   <component name="GOROOT" path="/usr/local/Cellar/go/1.12/libexec" />
@@ -264,13 +265,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../klauspost/reedsolomon/reedsolomon.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="267">
-          <caret line="213" column="50" lean-forward="true" selection-start-line="213" selection-start-column="50" selection-end-line="213" selection-end-column="50" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../../klauspost/reedsolomon/options.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
@@ -285,10 +279,17 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../../klauspost/reedsolomon/reedsolomon.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="267">
+          <caret line="213" column="37" selection-start-line="213" selection-start-column="37" selection-end-line="213" selection-end-column="37" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/server.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="473">
-          <caret line="58" column="17" selection-start-line="58" selection-start-column="17" selection-end-line="58" selection-end-column="17" />
+        <state relative-caret-position="5461">
+          <caret line="327" column="41" lean-forward="true" selection-start-line="327" selection-start-column="41" selection-end-line="327" selection-end-column="41" />
           <folding>
             <element signature="e#15#167#0" expanded="true" />
           </folding>

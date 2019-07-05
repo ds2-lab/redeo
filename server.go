@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	DataShard     = 10
-	ParityShard   = 3
-	LambdaMem     = 3000
-	GroupCapacity = LambdaMem * (DataShard + ParityShard) * 1000000
+	DataShards    int = 10
+	ParityShards  int = 3
+	LambdaMem     int = 3000
+	GroupCapacity     = LambdaMem * (DataShards + ParityShards) * 1000000
 )
 
 // Server configuration
@@ -283,7 +283,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			val := c.cmd.Arg(1)
 			if val != nil { /* val != nil, SET handler */
 				// ec encoding
-				enc, err := reedsolomon.New(10, 3, reedsolomon.WithMaxGoroutines(64))
+				enc, err := reedsolomon.New(DataShards, ParityShards, reedsolomon.WithMaxGoroutines(32))
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -308,7 +308,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 					//fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
 				}
 			} else { /* val == nil, GET handler */
-				for j := 0; j < 13; j++ {
+				for j := 0; j < DataShards+ParityShards; j++ {
 					newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: j}, cmd, key, nil}
 					// send new request to lambda channel
 					group.(*Group).Arr[j].C <- newReq
