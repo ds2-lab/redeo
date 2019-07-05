@@ -56,7 +56,7 @@ type Group struct {
 	C            chan Response
 	MemCounter   uint64
 	ChunkCounter int
-	//Lock         *sync.Mutex
+	Lock         sync.Mutex
 }
 
 type LambdaInstance struct {
