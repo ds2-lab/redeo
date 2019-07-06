@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	DataShards    int = 10
-	ParityShards  int = 3
-	LambdaMem     int = 3000
-	GroupCapacity     = LambdaMem * (DataShards + ParityShards) * 1000000
+	DataShards     int = 10
+	ParityShards   int = 2
+	LambdaMem      int = 3000
+	GroupCapacity      = LambdaMem * (DataShards + ParityShards) * 1000000
+	ECMaxGoroutine int = 32
 )
 
 // Server configuration
@@ -30,6 +31,7 @@ type Server struct {
 type Index struct {
 	ClientId int
 	ReqId    int
+	Counter  int
 }
 type Id struct {
 	ClientId int
@@ -55,7 +57,7 @@ type Group struct {
 	ChunkTable   map[Index][][]byte
 	C            chan Response
 	MemCounter   uint64
-	ChunkCounter int
+	ChunkCounter map[Index]int
 	Lock         sync.Mutex
 }
 
@@ -72,9 +74,9 @@ type LambdaInstance struct {
 	Counter   uint64
 }
 
-func (group Group) IncrementCounter() {
-	group.ChunkCounter += 1
-}
+//func (group Group) IncrementCounter() {
+//	group.ChunkCounter += 1
+//}
 
 // NewServer creates a new server instance
 func NewServer(config *Config) *Server {
@@ -283,7 +285,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			val := c.cmd.Arg(1)
 			if val != nil { /* val != nil, SET handler */
 				// ec encoding
-				enc, err := reedsolomon.New(DataShards, ParityShards, reedsolomon.WithMaxGoroutines(32))
+				enc, err := reedsolomon.New(DataShards, ParityShards, reedsolomon.WithMaxGoroutines(ECMaxGoroutine))
 				if err != nil {
 					fmt.Println(err)
 				}
