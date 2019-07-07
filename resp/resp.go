@@ -102,6 +102,6 @@ var (
 )
 
 // MaxBufferSize is the max request/response buffer size
-const MaxBufferSize = 64 * 1024 * 1024
+const MaxBufferSize = 64 * 1024
 
 func mkStdBuffer() []byte { return make([]byte, MaxBufferSize) }
