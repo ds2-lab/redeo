@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type bufioR struct {
@@ -455,9 +456,27 @@ func (b *bufioW) AppendArrayLen(n int) {
 func (b *bufioW) AppendBulk(p []byte) {
 	b.mu.Lock()
 	b.appendSize('$', int64(len(p)))
-	b.buf = append(b.buf, p...)
+	//b.buf = append(b.buf, p...)
+	b.buf = AppendByte(b.buf, p...)
 	b.buf = append(b.buf, binCRLF...)
 	b.mu.Unlock()
+}
+
+func AppendByte(slice []byte, data ...byte) []byte {
+	m := len(slice)
+	n := m + len(data)
+	if n > cap(slice) { // if necessary, reallocate
+		// allocate double what's needed, for future growth.
+		fmt.Println("capacity need to re allocate")
+		newSlice := make([]byte, (n+1)*2)
+		copy(newSlice, slice)
+		slice = newSlice
+	}
+	slice = slice[0:n]
+	t := time.Now()
+	copy(slice[m:n], data)
+	fmt.Println("copy time copy(slice[m:n], data) is", time.Since(t))
+	return slice
 }
 
 // AppendBulkString appends a bulk string to the output buffer

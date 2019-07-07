@@ -2,7 +2,8 @@ package redeo
 
 import (
 	"context"
-	"github.com/bsm/redeo/resp"
+	//"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo/resp"
 	"net"
 	"sync"
 	"sync/atomic"

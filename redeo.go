@@ -4,7 +4,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/bsm/redeo/resp"
+	//"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo/resp"
 )
 
 // UnknownCommand returns an unknown command error string
