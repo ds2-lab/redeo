@@ -3,7 +3,6 @@ package redeo
 import (
 	"fmt"
 	"github.com/cornelk/hashmap"
-	"github.com/klauspost/reedsolomon"
 	"github.com/wangaoone/redeo/resp"
 	"net"
 	"strings"
@@ -13,7 +12,7 @@ import (
 
 const (
 	DataShards     int = 10
-	ParityShards   int = 2
+	ParityShards   int = 4
 	LambdaMem      int = 3000
 	GroupCapacity      = LambdaMem * (DataShards + ParityShards) * 1000000
 	ECMaxGoroutine int = 32
@@ -36,7 +35,6 @@ type Index struct {
 type Id struct {
 	ClientId int
 	ReqId    int
-	ChunkId  int
 }
 type Req struct {
 	Id  Id
@@ -283,41 +281,21 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			// receive request from client
 			key := c.cmd.Arg(0)
 			val := c.cmd.Arg(1)
+			fmt.Println("key is ", key.String())
+			fmt.Println("val is ", val.Bytes())
 			if val != nil { /* val != nil, SET handler */
-				// ec encoding
-				enc, err := reedsolomon.New(DataShards, ParityShards, reedsolomon.WithMaxGoroutines(ECMaxGoroutine))
-				if err != nil {
-					fmt.Println(err)
-				}
-				shards, err := enc.Split(val)
-				if err != nil {
-					fmt.Println(err)
-				}
-				// Encode parity
-				err = enc.Encode(shards)
-				if err != nil {
-					fmt.Println(err)
-				}
-				ok, err := enc.Verify(shards)
-				fmt.Println("verify status is ", ok)
-				//fmt.Printf("encode status is", ok, "File split into %d data+parity shards with %d bytes/shard.\n", len(shards), len(shards[0]))
-				// find available lambda group
-				// send every shard to the every lambda instance in group
-				for i, shard := range shards {
-					newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: i}, cmd, key, shard}
-					// send new request to lambda channel
-					group.(*Group).Arr[i].C <- newReq
-					//fmt.Println("the ", i, "th shard is ", shard, "set to lambda complete")
-				}
+				// send shard to the corresponding lambda instance in group
+				newReq := Req{Id{ClientId: clientId, ReqId: reqId}, cmd, key, val}
+				// send new request to lambda channel
+				group.(*Group).Arr[clientId%(DataShards+ParityShards)].C <- newReq
 			} else { /* val == nil, GET handler */
-				for j := 0; j < DataShards+ParityShards; j++ {
-					newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: j}, cmd, key, nil}
-					// send new request to lambda channel
-					group.(*Group).Arr[j].C <- newReq
-				}
+				newReq := Req{Id{ClientId: clientId, ReqId: reqId}, cmd, key, nil}
+				// send new request to lambda channel
+				group.(*Group).Arr[clientId%(DataShards+ParityShards)].C <- newReq
 			}
 			reqId += 1
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
+			fmt.Println("final response ", result.(int))
 			c.wr.AppendBulkString(result.(string))
 			//fmt.Println("final response is ", result)
 			//c.wr.AppendInt(1)

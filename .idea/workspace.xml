@@ -2,12 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3e06fb2b-254d-443b-abe0-f3c1797ef0e7" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/client.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/info.go" beforeDir="false" afterPath="$PROJECT_DIR$/info.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubsub.go" beforeDir="false" afterPath="$PROJECT_DIR$/pubsub.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/redeo.go" beforeDir="false" afterPath="$PROJECT_DIR$/redeo.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resp/bufio.go" beforeDir="false" afterPath="$PROJECT_DIR$/resp/bufio.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resp/resp.go" beforeDir="false" afterPath="$PROJECT_DIR$/resp/resp.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resp/request.go" beforeDir="false" afterPath="$PROJECT_DIR$/resp/request.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/server.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -18,13 +16,10 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/resp/bufio.go">
+        <entry file="file://$PROJECT_DIR$/server.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="644">
-              <caret line="467" column="35" lean-forward="true" selection-start-line="467" selection-start-column="35" selection-end-line="467" selection-end-column="35" />
-              <folding>
-                <element signature="e#14#65#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="-694">
+              <caret line="222" column="23" selection-start-line="222" selection-start-column="22" selection-end-line="222" selection-end-column="23" />
             </state>
           </provider>
         </entry>
@@ -32,19 +27,28 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/resp/response.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1216">
-              <caret line="66" column="17" lean-forward="true" selection-start-line="66" selection-start-column="17" selection-end-line="66" selection-end-column="17" />
+            <state relative-caret-position="555">
+              <caret line="70" column="53" lean-forward="true" selection-start-line="70" selection-start-column="53" selection-end-line="70" selection-end-column="53" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/resp/resp.go">
+        <entry file="file://$PROJECT_DIR$/resp/request.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1185">
-              <caret line="104" column="38" selection-start-line="104" selection-start-column="38" selection-end-line="104" selection-end-column="38" />
+            <state relative-caret-position="481">
+              <caret line="162" column="36" selection-start-line="162" selection-start-column="36" selection-end-line="162" selection-end-column="36" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/resp/bufio.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="475" column="22" lean-forward="true" selection-start-line="475" selection-start-column="22" selection-end-line="475" selection-end-column="22" />
               <folding>
-                <element signature="e#178#195#0" expanded="true" />
+                <element signature="e#14#65#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -67,6 +71,8 @@
       <find>fmt</find>
       <find>13</find>
       <find>14</find>
+      <find>group</find>
+      <find>copy time copy(slice[m:n], data)</find>
     </findStrings>
   </component>
   <component name="GOROOT" path="/usr/local/Cellar/go/1.12/libexec" />
@@ -80,8 +86,6 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/../../bsm/redeo/resp/request.go" />
-        <option value="$PROJECT_DIR$/resp/request.go" />
-        <option value="$PROJECT_DIR$/server.go" />
         <option value="$PROJECT_DIR$/resp/response.go" />
         <option value="$PROJECT_DIR$/client.go" />
         <option value="$PROJECT_DIR$/redeo.go" />
@@ -89,13 +93,16 @@
         <option value="$PROJECT_DIR$/pubsub.go" />
         <option value="$PROJECT_DIR$/resp/resp.go" />
         <option value="$PROJECT_DIR$/resp/bufio.go" />
+        <option value="$PROJECT_DIR$/resp/request.go" />
+        <option value="$PROJECT_DIR$/server.go" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" fullScreen="true">
-    <option name="x" value="1440" />
-    <option name="width" value="1274" />
-    <option name="height" value="1440" />
+    <option name="x" value="180" />
+    <option name="y" value="112" />
+    <option name="width" value="1080" />
+    <option name="height" value="676" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -149,11 +156,11 @@
     </option>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1440" y="0" width="2560" height="1440" extended-state="0" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4591241" visible="true" weight="0.13661636" />
-      <window_info id="Structure" order="1" sideWeight="0.5408759" side_tool="true" visible="true" weight="0.13661636" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4554217" visible="true" weight="0.2546495" />
+      <window_info id="Structure" order="1" sideWeight="0.5445783" side_tool="true" visible="true" weight="0.2546495" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
@@ -253,20 +260,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../klauspost/reedsolomon/options.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="447">
-          <caret line="42" column="5" selection-start-line="42" selection-start-column="5" selection-end-line="42" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/resp/request.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="975">
-          <caret line="152" column="56" selection-start-line="152" selection-start-column="56" selection-end-line="152" selection-end-column="56" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/config.go">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -284,23 +277,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/server.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1230">
-          <caret line="383" lean-forward="true" selection-start-line="383" selection-end-line="383" />
-          <folding>
-            <element signature="e#15#167#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="4" column="33" lean-forward="true" selection-start-line="4" selection-start-column="33" selection-end-line="4" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/redeo.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="780">
@@ -313,28 +289,66 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/resp/resp.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1185">
-          <caret line="104" column="38" selection-start-line="104" selection-start-column="38" selection-end-line="104" selection-end-column="38" />
+        <state relative-caret-position="630">
+          <caret line="42" column="71" lean-forward="true" selection-start-line="42" selection-start-column="71" selection-end-line="42" selection-end-column="71" />
           <folding>
             <element signature="e#178#195#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../../klauspost/reedsolomon/options.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="408">
+          <caret line="21" column="17" selection-start-line="21" selection-start-column="4" selection-end-line="21" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="547">
+          <caret line="145" column="20" selection-start-line="145" selection-start-column="20" selection-end-line="145" selection-end-column="20" />
+          <folding>
+            <element signature="e#15#132#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/resp/request.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="481">
+          <caret line="162" column="36" selection-start-line="162" selection-start-column="36" selection-end-line="162" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/resp/command.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="645">
+          <caret line="49" column="18" selection-start-line="49" selection-start-column="18" selection-end-line="49" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/resp/response.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1216">
-          <caret line="66" column="17" lean-forward="true" selection-start-line="66" selection-start-column="17" selection-end-line="66" selection-end-column="17" />
+        <state relative-caret-position="555">
+          <caret line="70" column="53" lean-forward="true" selection-start-line="70" selection-start-column="53" selection-end-line="70" selection-end-column="53" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/resp/bufio.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="644">
-          <caret line="467" column="35" lean-forward="true" selection-start-line="467" selection-start-column="35" selection-end-line="467" selection-end-column="35" />
+        <state relative-caret-position="234">
+          <caret line="475" column="22" lean-forward="true" selection-start-line="475" selection-start-column="22" selection-end-line="475" selection-end-column="22" />
           <folding>
             <element signature="e#14#65#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-694">
+          <caret line="222" column="23" selection-start-line="222" selection-start-column="22" selection-end-line="222" selection-end-column="23" />
         </state>
       </provider>
     </entry>
