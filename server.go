@@ -18,6 +18,7 @@ const (
 	ECMaxGoroutine int = 32
 )
 
+var lock sync.Mutex
 // Server configuration
 type Server struct {
 	config *Config
@@ -27,6 +28,10 @@ type Server struct {
 	mu   sync.RWMutex
 }
 
+type Chunk struct {
+	Id   int
+	Body []byte
+}
 type Index struct {
 	ClientId int
 	ReqId    int
@@ -35,6 +40,7 @@ type Index struct {
 type Id struct {
 	ClientId int
 	ReqId    int
+	ChunkId  int
 }
 type Req struct {
 	Id  Id
@@ -244,7 +250,6 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, mapp
 
 // client handler
 func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clientId int, mappingTable *hashmap.HashMap) {
-	fmt.Println("client id is ", clientId)
 	// make helper channel for every client
 
 	// Release client on exit
@@ -280,12 +285,12 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
 			// receive request from client
 			key := c.cmd.Arg(0)
-			val := c.cmd.Arg(1)
-			fmt.Println("key is ", key.String())
-			fmt.Println("val is ", val.Bytes())
+			chunkId, _ := c.cmd.Arg(1).Int()
+			val := c.cmd.Arg(2)
+			//fmt.Println("key is ", key.String(), "client Id is", clientId, "reqId is", reqId, "val is", val.Bytes(), "chunk id is", chunkId)
 			if val != nil { /* val != nil, SET handler */
 				// send shard to the corresponding lambda instance in group
-				newReq := Req{Id{ClientId: clientId, ReqId: reqId}, cmd, key, val}
+				newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: int(chunkId)}, cmd, key, val}
 				// send new request to lambda channel
 				group.(*Group).Arr[clientId%(DataShards+ParityShards)].C <- newReq
 			} else { /* val == nil, GET handler */
@@ -295,10 +300,12 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			}
 			reqId += 1
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
-			fmt.Println("final response ", result.(int))
-			c.wr.AppendBulkString(result.(string))
-			//fmt.Println("final response is ", result)
-			//c.wr.AppendInt(1)
+			temp := result.(Chunk)
+			//fmt.Println("final response ", temp)
+			t := time.Now()
+			c.wr.AppendInt(int64(temp.Id))
+			c.wr.AppendBulk(temp.Body)
+			fmt.Println("client go routine append time is", time.Since(t))
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
 				return
