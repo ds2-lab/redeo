@@ -18,7 +18,6 @@ const (
 	ECMaxGoroutine int = 32
 )
 
-var lock sync.Mutex
 // Server configuration
 type Server struct {
 	config *Config
@@ -287,7 +286,6 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			key := c.cmd.Arg(0)
 			chunkId, _ := c.cmd.Arg(1).Int()
 			val := c.cmd.Arg(2)
-			//fmt.Println("key is ", key.String(), "client Id is", clientId, "reqId is", reqId, "val is", val.Bytes(), "chunk id is", chunkId)
 			if val != nil { /* val != nil, SET handler */
 				// send shard to the corresponding lambda instance in group
 				newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: int(chunkId)}, cmd, key, val}
@@ -305,11 +303,14 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			t := time.Now()
 			c.wr.AppendInt(int64(temp.Id))
 			c.wr.AppendBulk(temp.Body)
-			fmt.Println("client go routine append time is", time.Since(t))
+			fmt.Println("client go routine append time is", time.Since(t), "obj len is", len(temp.Body))
+			t1 := time.Now()
 			// flush buffer, return on errors
 			if err := c.wr.Flush(); err != nil {
 				return
 			}
+			fmt.Println("client go routine flush time is", time.Since(t1))
+
 		}
 
 		// flush buffer, return on errors

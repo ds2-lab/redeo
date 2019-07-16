@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type bufioR struct {
@@ -468,15 +469,15 @@ func AppendByte(slice []byte, data ...byte) []byte {
 		// allocate double what's needed, for future growth.
 		fmt.Println("capacity need to re allocate")
 		newSlice := make([]byte, (n+1)*2)
-		//t1 := time.Now()
+		t1 := time.Now()
 		copy(newSlice, slice)
-		//fmt.Println("copy(newSlice, slice) time is", time.Since(t1))
+		fmt.Println("copy(newSlice, slice) time is", time.Since(t1))
 		slice = newSlice
 	}
 	slice = slice[0:n]
-	//t2 := time.Now()
+	t2 := time.Now()
 	copy(slice[m:n], data)
-	//fmt.Println("copy time copy(slice[m:n], data) is", time.Since(t2))
+	fmt.Println("copy time copy(slice[m:n], data) is", time.Since(t2))
 	return slice
 }
 
