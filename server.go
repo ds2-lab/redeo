@@ -306,7 +306,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			fmt.Println("client go routine append time is", time.Since(t), "obj len is", len(temp.Body))
 			t1 := time.Now()
 			// flush buffer, return on errors
-			if err := c.wr.Flush(); err != nil {
+			if err := c.wr.MyFlush(); err != nil {
 				return
 			}
 			fmt.Println("client go routine flush time is", time.Since(t1))

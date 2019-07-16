@@ -56,6 +56,7 @@ type ResponseWriter interface {
 	Buffered() int
 	// Flush flushes pending buffer.
 	Flush() error
+	MyFlush() error
 	// Reset resets the writer to a new writer and recycles internal buffers.
 	Reset(w io.Writer)
 }

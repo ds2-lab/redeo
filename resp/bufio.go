@@ -111,16 +111,22 @@ func (b *bufioR) ReadBulkLen() (int64, error) {
 }
 
 func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
+	fmt.Println("before require buff len is", b.Buffered())
+	t0 := time.Now()
 	sz, err := b.ReadBulkLen()
 	if err != nil {
 		return p, err
 	}
-
+	fmt.Println("readBulk read len time is ", time.Since(t0))
+	t1 := time.Now()
 	if err := b.require(int(sz + 2)); err != nil {
 		return p, err
 	}
-
+	fmt.Println("readBulk require time is ", time.Since(t1))
+	fmt.Println("after require buff len is", b.Buffered())
+	t2 := time.Now()
 	p = append(p, b.buf[b.r:b.r+int(sz)]...)
+	fmt.Println("readbulk time is ", time.Since(t2))
 	b.r += int(sz + 2)
 
 	return p, nil
@@ -587,6 +593,17 @@ func (b *bufioW) CopyBulk(src io.Reader, n int64) error {
 func (b *bufioW) Flush() error {
 	b.mu.Lock()
 	err := b.flush()
+	b.mu.Unlock()
+	return err
+}
+
+// Flush flushes pending buffer
+func (b *bufioW) MyFlush() error {
+	b.mu.Lock()
+	t := time.Now()
+	temp := len(b.buf)
+	err := b.flush()
+	fmt.Printf("flush time no lock(%p) is %v, len is %d\n", b, time.Since(t), temp)
 	b.mu.Unlock()
 	return err
 }
