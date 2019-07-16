@@ -111,7 +111,8 @@ func (b *bufioR) ReadBulkLen() (int64, error) {
 }
 
 func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
-	fmt.Println("before require buff len is", b.Buffered())
+	temp0 := b.Buffered()
+	fmt.Println("before require buff len is", temp0)
 	t0 := time.Now()
 	sz, err := b.ReadBulkLen()
 	if err != nil {
@@ -122,8 +123,9 @@ func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	if err := b.require(int(sz + 2)); err != nil {
 		return p, err
 	}
+	temp1 := b.Buffered()
+	fmt.Println("after require buff len is", temp1)
 	fmt.Println("readBulk require time is ", time.Since(t1))
-	fmt.Println("after require buff len is", b.Buffered())
 	t2 := time.Now()
 	p = append(p, b.buf[b.r:b.r+int(sz)]...)
 	fmt.Println("readbulk time is ", time.Since(t2))
