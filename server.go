@@ -300,17 +300,18 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
 			temp := result.(Chunk)
 			//fmt.Println("final response ", temp)
-			t := time.Now()
+			t0 := time.Now()
 			c.wr.AppendInt(int64(temp.Id))
-			c.wr.AppendBulk(temp.Body)
-			fmt.Println("client go routine append time is", time.Since(t), "obj len is", len(temp.Body))
+			fmt.Println("server append Int time is", time.Since(t0))
 			t1 := time.Now()
+			c.wr.AppendBulk(temp.Body)
+			fmt.Println("server append Bulk time is", time.Since(t1))
+			t2 := time.Now()
 			// flush buffer, return on errors
 			if err := c.wr.MyFlush(); err != nil {
 				return
 			}
-			fmt.Println("client go routine flush time is", time.Since(t1))
-
+			fmt.Println("server flush to client time is", time.Since(t2))
 		}
 
 		// flush buffer, return on errors

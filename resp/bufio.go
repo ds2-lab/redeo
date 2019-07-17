@@ -462,12 +462,14 @@ func (b *bufioW) AppendArrayLen(n int) {
 
 // AppendBulk appends bulk bytes to the output buffer
 func (b *bufioW) AppendBulk(p []byte) {
+	t := time.Now()
 	b.mu.Lock()
 	b.appendSize('$', int64(len(p)))
 	//b.buf = append(b.buf, p...)
 	b.buf = AppendByte(b.buf, p...)
 	b.buf = append(b.buf, binCRLF...)
 	b.mu.Unlock()
+	fmt.Println("appendBulk finished, buf len is", len(b.buf), "appendBulk time is ", time.Since(t))
 }
 
 func AppendByte(slice []byte, data ...byte) []byte {
@@ -601,12 +603,12 @@ func (b *bufioW) Flush() error {
 
 // Flush flushes pending buffer
 func (b *bufioW) MyFlush() error {
-	b.mu.Lock()
 	t := time.Now()
+	b.mu.Lock()
 	temp := len(b.buf)
 	err := b.flush()
-	fmt.Printf("flush time no lock(%p) is %v, len is %d\n", b, time.Since(t), temp)
 	b.mu.Unlock()
+	fmt.Println("myFlush function time is ", time.Since(t), "buffer len is ", temp)
 	return err
 }
 
