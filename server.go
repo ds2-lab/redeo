@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -11,8 +12,8 @@ import (
 )
 
 const (
-	DataShards     int = 10
-	ParityShards   int = 4
+	DataShards     int = 2
+	ParityShards   int = 1
 	LambdaMem      int = 3000
 	GroupCapacity      = LambdaMem * (DataShards + ParityShards) * 1000000
 	ECMaxGoroutine int = 32
@@ -299,19 +300,32 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			reqId += 1
 		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
 			temp := result.(Chunk)
-			//fmt.Println("final response ", temp)
+			fmt.Println("chunk body len is ", len(temp.Body))
 			t0 := time.Now()
 			c.wr.AppendInt(int64(temp.Id))
 			fmt.Println("server append Int time is", time.Since(t0))
 			t1 := time.Now()
-			c.wr.AppendBulk(temp.Body)
+			c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
 			fmt.Println("server append Bulk time is", time.Since(t1))
 			t2 := time.Now()
 			// flush buffer, return on errors
 			if err := c.wr.MyFlush(); err != nil {
 				return
 			}
-			fmt.Println("server flush to client time is", time.Since(t2))
+			fmt.Println("server flush to client time is", time.Since(t2), "chunk id is", temp.Id%(DataShards+ParityShards))
+			//val := []byte(RandomString(10485760))
+			//t0 := time.Now()
+			//c.wr.AppendInt(1)
+			//fmt.Println("server append Int time is", time.Since(t0))
+			//t1 := time.Now()
+			//c.wr.AppendBulk(val)
+			//fmt.Println("server append Bulk time is", time.Since(t1))
+			//t2 := time.Now()
+			//// flush buffer, return on errors
+			//if err := c.wr.MyFlush(); err != nil {
+			//	return
+			//}
+			//fmt.Println("server flush to client time is", time.Since(t2))
 		}
 
 		// flush buffer, return on errors
@@ -367,4 +381,12 @@ func (srv *Server) Accept(lis net.Listener) net.Conn {
 func (srv *Server) Serve_client(cn net.Conn) {
 	//fmt.Println("in the lambda server")
 	srv.serveClient(newClient(cn))
+}
+
+func RandomString(len int) string {
+	bytes := make([]byte, len)
+	for i := 0; i < len; i++ {
+		bytes[i] = byte(65 + rand.Intn(25)) //A=65 and Z = 65+25
+	}
+	return string(bytes)
 }
