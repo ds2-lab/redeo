@@ -12,12 +12,10 @@ import (
 )
 
 const (
-	DataShards     int = 2
-	ParityShards   int = 1
-	LambdaMem      int = 3000
-	GroupCapacity      = LambdaMem * (DataShards + ParityShards) * 1000000
-	ECMaxGoroutine int = 32
+	LambdaMem int = 3000
 )
+
+var metaMap = hashmap.New(1024)
 
 // Server configuration
 type Server struct {
@@ -28,20 +26,28 @@ type Server struct {
 	mu   sync.RWMutex
 }
 
+type objKey struct {
+	key     []byte
+	chunkId int64
+}
+
 type Chunk struct {
 	Id   int
 	Body []byte
 }
+
 type Index struct {
 	ClientId int
 	ReqId    int
 	Counter  int
 }
+
 type Id struct {
 	ClientId int
 	ReqId    int
 	ChunkId  int
 }
+
 type Req struct {
 	Id  Id
 	Cmd string
@@ -57,12 +63,8 @@ type Response struct {
 }
 
 type Group struct {
-	Arr          []LambdaInstance
-	ChunkTable   map[Index][][]byte
-	C            chan Response
-	MemCounter   uint64
-	ChunkCounter map[Index]int
-	Lock         sync.Mutex
+	Arr        []LambdaInstance
+	MemCounter uint64
 }
 
 type LambdaInstance struct {
@@ -73,7 +75,6 @@ type LambdaInstance struct {
 	W         *resp.RequestWriter
 	R         resp.ResponseReader
 	C         chan Req
-	Peek      chan Response
 	AliveLock sync.Mutex
 	Counter   uint64
 }
@@ -270,7 +271,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 	// go routine peeking cmd
 	go myPeekCmd(c, perform, helper)
 
-	reqId := 0
+	//reqId := 0
 	// Init request/response loop
 	for !c.closed {
 		// set deadline
@@ -282,23 +283,42 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			fmt.Println("get lambda instance failed")
 		}
 		select {
-		case cmd := <-helper: /* blocking on helper channel while peeking cmd*/
+		//
+		/* blocking on helper channel while peeking cmd*/
+		//
+		case cmd := <-helper:
 			// receive request from client
 			key := c.cmd.Arg(0)
-			chunkId, _ := c.cmd.Arg(1).Int()
-			val := c.cmd.Arg(2)
+			chunkId, _ := c.cmd.Arg(2).Int()
+			lambdaId, _ := c.cmd.Arg(3).Int()
+			val := c.cmd.Arg(4)
 			if val != nil { /* val != nil, SET handler */
-				// send shard to the corresponding lambda instance in group
-				newReq := Req{Id{ClientId: clientId, ReqId: reqId, ChunkId: int(chunkId)}, cmd, key, val}
-				// send new request to lambda channel
-				group.(*Group).Arr[clientId%(DataShards+ParityShards)].C <- newReq
+				// check if the key is existed
+				_, ok := metaMap.Get(key)
+				if ok == false {
+					fmt.Println("clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					// send shard to the corresponding lambda instance in group
+					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
+					// send new request to lambda channel
+					group.(*Group).Arr[lambdaId].C <- newReq
+					metaMap.Set(objKey{key: key, chunkId: chunkId}, lambdaId)
+				} else {
+					// update the existed key
+				}
 			} else { /* val == nil, GET handler */
-				newReq := Req{Id{ClientId: clientId, ReqId: reqId}, cmd, key, nil}
+				lambdaDestiny, ok := metaMap.Get(objKey{key: key, chunkId: chunkId})
+				if ok {
+					fmt.Println("not found key in lambda store, please set first")
+				}
+				newReq := Req{Id{ClientId: clientId}, cmd, key, nil}
 				// send new request to lambda channel
-				group.(*Group).Arr[clientId%(DataShards+ParityShards)].C <- newReq
+				group.(*Group).Arr[lambdaDestiny.(int64)].C <- newReq
 			}
-			reqId += 1
-		case result := <-clientChannel: /*blocking on receive final result from lambda store*/
+			//reqId += 1
+		//
+		/* blocking on receive final result from lambda store*/
+		//
+		case result := <-clientChannel:
 			temp := result.(Chunk)
 			fmt.Println("chunk body len is ", len(temp.Body))
 			t0 := time.Now()
@@ -312,20 +332,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			if err := c.wr.MyFlush(); err != nil {
 				return
 			}
-			fmt.Println("server flush to client time is", time.Since(t2), "chunk id is", temp.Id%(DataShards+ParityShards))
-			//val := []byte(RandomString(10485760))
-			//t0 := time.Now()
-			//c.wr.AppendInt(1)
-			//fmt.Println("server append Int time is", time.Since(t0))
-			//t1 := time.Now()
-			//c.wr.AppendBulk(val)
-			//fmt.Println("server append Bulk time is", time.Since(t1))
-			//t2 := time.Now()
-			//// flush buffer, return on errors
-			//if err := c.wr.MyFlush(); err != nil {
-			//	return
-			//}
-			//fmt.Println("server flush to client time is", time.Since(t2))
+			fmt.Println("server flush to client time is", time.Since(t2))
 		}
 
 		// flush buffer, return on errors
