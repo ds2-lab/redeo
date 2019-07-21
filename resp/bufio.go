@@ -6,7 +6,6 @@ import (
 	"io"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type bufioR struct {
@@ -111,24 +110,24 @@ func (b *bufioR) ReadBulkLen() (int64, error) {
 }
 
 func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
-	temp0 := b.Buffered()
-	fmt.Println("before require buff len is", temp0)
-	t0 := time.Now()
+	//temp0 := b.Buffered()
+	//fmt.Println("before require buff len is", temp0)
+	//t0 := time.Now()
 	sz, err := b.ReadBulkLen()
 	if err != nil {
 		return p, err
 	}
-	fmt.Println("readBulk read len time is ", time.Since(t0))
-	t1 := time.Now()
+	//fmt.Println("readBulk read len time is ", time.Since(t0))
+	//t1 := time.Now()
 	if err := b.require(int(sz + 2)); err != nil {
 		return p, err
 	}
-	temp1 := b.Buffered()
-	fmt.Println("after require buff len is", temp1)
-	fmt.Println("readBulk require time is ", time.Since(t1))
-	t2 := time.Now()
+	//temp1 := b.Buffered()
+	//fmt.Println("after require buff len is", temp1)
+	//fmt.Println("readBulk require time is ", time.Since(t1))
+	//t2 := time.Now()
 	p = append(p, b.buf[b.r:b.r+int(sz)]...)
-	fmt.Println("readbulk time is ", time.Since(t2))
+	//fmt.Println("readbulk time is ", time.Since(t2))
 	b.r += int(sz + 2)
 
 	return p, nil
@@ -462,14 +461,14 @@ func (b *bufioW) AppendArrayLen(n int) {
 
 // AppendBulk appends bulk bytes to the output buffer
 func (b *bufioW) AppendBulk(p []byte) {
-	t := time.Now()
+	//t := time.Now()
 	b.mu.Lock()
 	b.appendSize('$', int64(len(p)))
 	//b.buf = append(b.buf, p...)
 	b.buf = AppendByte(b.buf, p...)
 	b.buf = append(b.buf, binCRLF...)
 	b.mu.Unlock()
-	fmt.Println("appendBulk finished, buf len is", len(b.buf), "appendBulk time is ", time.Since(t))
+	//fmt.Println("appendBulk finished, buf len is", len(b.buf), "appendBulk time is ", time.Since(t))
 }
 
 func AppendByte(slice []byte, data ...byte) []byte {
@@ -477,17 +476,17 @@ func AppendByte(slice []byte, data ...byte) []byte {
 	n := m + len(data)
 	if n > cap(slice) { // if necessary, reallocate
 		// allocate double what's needed, for future growth.
-		fmt.Println("capacity need to re allocate")
+		//fmt.Println("capacity need to re allocate")
 		newSlice := make([]byte, (n+1)*2)
-		t1 := time.Now()
+		//t1 := time.Now()
 		copy(newSlice, slice)
-		fmt.Println("copy(newSlice, slice) time is", time.Since(t1))
+		//fmt.Println("copy(newSlice, slice) time is", time.Since(t1))
 		slice = newSlice
 	}
 	slice = slice[0:n]
-	t2 := time.Now()
+	//t2 := time.Now()
 	copy(slice[m:n], data)
-	fmt.Println("copy time copy(slice[m:n], data) is", time.Since(t2))
+	//fmt.Println("copy time copy(slice[m:n], data) is", time.Since(t2))
 	return slice
 }
 
@@ -603,12 +602,12 @@ func (b *bufioW) Flush() error {
 
 // Flush flushes pending buffer
 func (b *bufioW) MyFlush() error {
-	t := time.Now()
+	//t := time.Now()
 	b.mu.Lock()
-	temp := len(b.buf)
+	//temp := len(b.buf)
 	err := b.flush()
 	b.mu.Unlock()
-	fmt.Println("myFlush function time is ", time.Since(t), "buffer len is ", temp)
+	//fmt.Println("myFlush function time is ", time.Since(t), "buffer len is ", temp)
 	return err
 }
 

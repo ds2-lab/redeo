@@ -15,7 +15,7 @@ const (
 	LambdaMem int = 3000
 )
 
-var metaMap = hashmap.New(1024)
+var metaMap = make(map[objKey]int64)
 
 // Server configuration
 type Server struct {
@@ -27,7 +27,7 @@ type Server struct {
 }
 
 type objKey struct {
-	key     []byte
+	key     string
 	chunkId int64
 }
 
@@ -294,25 +294,26 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			val := c.cmd.Arg(4)
 			if val != nil { /* val != nil, SET handler */
 				// check if the key is existed
-				_, ok := metaMap.Get(key)
+				_, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
 				if ok == false {
-					fmt.Println("clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 					// send shard to the corresponding lambda instance in group
 					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
 					// send new request to lambda channel
 					group.(*Group).Arr[lambdaId].C <- newReq
-					metaMap.Set(objKey{key: key, chunkId: chunkId}, lambdaId)
+					metaMap[objKey{key: key.String(), chunkId: chunkId}] = lambdaId
+					fmt.Println("IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
 				}
 			} else { /* val == nil, GET handler */
-				lambdaDestiny, ok := metaMap.Get(objKey{key: key, chunkId: chunkId})
+				lambdaDestiny, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
+				fmt.Println("IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				if ok {
 					fmt.Println("not found key in lambda store, please set first")
 				}
 				newReq := Req{Id{ClientId: clientId}, cmd, key, nil}
 				// send new request to lambda channel
-				group.(*Group).Arr[lambdaDestiny.(int64)].C <- newReq
+				group.(*Group).Arr[lambdaDestiny].C <- newReq
 			}
 			//reqId += 1
 		//
@@ -321,18 +322,18 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 		case result := <-clientChannel:
 			temp := result.(Chunk)
 			fmt.Println("chunk body len is ", len(temp.Body))
-			t0 := time.Now()
+			//t0 := time.Now()
 			c.wr.AppendInt(int64(temp.Id))
-			fmt.Println("server append Int time is", time.Since(t0))
-			t1 := time.Now()
+			//fmt.Println("server append Int time is", time.Since(t0))
+			//t1 := time.Now()
 			c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
-			fmt.Println("server append Bulk time is", time.Since(t1))
-			t2 := time.Now()
+			//fmt.Println("server append Bulk time is", time.Since(t1))
+			//t2 := time.Now()
 			// flush buffer, return on errors
 			if err := c.wr.MyFlush(); err != nil {
 				return
 			}
-			fmt.Println("server flush to client time is", time.Since(t2))
+			//fmt.Println("server flush to client time is", time.Since(t2))
 		}
 
 		// flush buffer, return on errors
