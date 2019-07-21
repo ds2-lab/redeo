@@ -6,6 +6,7 @@ import (
 	"github.com/wangaoone/redeo/resp"
 	"math/rand"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +16,7 @@ const (
 	LambdaMem int = 3000
 )
 
-var metaMap = make(map[objKey]int64)
+var metaMap = hashmap.New(1024 * 1024)
 
 // Server configuration
 type Server struct {
@@ -296,30 +297,30 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 				lambdaId, _ := c.cmd.Arg(3).Int()
 				val := c.cmd.Arg(4)
 				// check if the key is existed
-				lambdaDestiny, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
+				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				if ok == false {
 					// send shard to the corresponding lambda instance in group
 					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
 					// send new request to lambda channel
 					group.(*Group).Arr[lambdaId].C <- newReq
-					metaMap[objKey{key: key.String(), chunkId: chunkId}] = lambdaId
-					fmt.Println("key is", key.String(), "IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
+					fmt.Println("KEY is", key.String(), "IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
 					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
-					group.(*Group).Arr[lambdaDestiny].C <- newReq
-					fmt.Println("key is", key.String(), "IN SET UPDATE, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					group.(*Group).Arr[lambdaDestination.(int64)].C <- newReq
+					fmt.Println("KEY is", key.String(), "IN SET UPDATE, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
-				lambdaDestiny, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
-				fmt.Println("IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestiny)
+				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
+				fmt.Println("KEY is", key.String(), "IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
 				if ok == false {
-					fmt.Println("not found key in lambda store, please set first")
+					fmt.Println("KEY is", key.String(), "not found key in lambda store, please set first")
 				}
 				newReq := Req{Id{ClientId: clientId}, cmd, key, nil}
 				// send new request to lambda channel
-				group.(*Group).Arr[lambdaDestiny].C <- newReq
+				group.(*Group).Arr[lambdaDestination.(int64)].C <- newReq
 			}
 
 			//reqId += 1
