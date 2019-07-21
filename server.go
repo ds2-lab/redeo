@@ -289,10 +289,12 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 		case cmd := <-helper:
 			// receive request from client
 			key := c.cmd.Arg(0)
-			chunkId, _ := c.cmd.Arg(2).Int()
-			lambdaId, _ := c.cmd.Arg(3).Int()
-			val := c.cmd.Arg(4)
-			if val != nil { /* val != nil, SET handler */
+			switch strings.ToLower(cmd) {
+			case "set":
+				//clientId := c.cmd.Arg(1)
+				chunkId, _ := c.cmd.Arg(2).Int()
+				lambdaId, _ := c.cmd.Arg(3).Int()
+				val := c.cmd.Arg(4)
 				// check if the key is existed
 				_, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
 				if ok == false {
@@ -305,20 +307,22 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 				} else {
 					// update the existed key
 				}
-			} else { /* val == nil, GET handler */
+			case "get":
+				chunkId, _ := c.cmd.Arg(1).Int()
 				lambdaDestiny, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
-				fmt.Println("IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
-				if ok {
+				fmt.Println("IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestiny)
+				if ok == false {
 					fmt.Println("not found key in lambda store, please set first")
 				}
 				newReq := Req{Id{ClientId: clientId}, cmd, key, nil}
 				// send new request to lambda channel
 				group.(*Group).Arr[lambdaDestiny].C <- newReq
 			}
+
 			//reqId += 1
-		//
-		/* blocking on receive final result from lambda store*/
-		//
+			//
+			/* blocking on receive final result from lambda store*/
+			//
 		case result := <-clientChannel:
 			temp := result.(Chunk)
 			fmt.Println("chunk body len is ", len(temp.Body))
