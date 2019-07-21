@@ -296,16 +296,19 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 				lambdaId, _ := c.cmd.Arg(3).Int()
 				val := c.cmd.Arg(4)
 				// check if the key is existed
-				_, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
+				lambdaDestiny, ok := metaMap[objKey{key: key.String(), chunkId: chunkId}]
 				if ok == false {
 					// send shard to the corresponding lambda instance in group
 					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
 					// send new request to lambda channel
 					group.(*Group).Arr[lambdaId].C <- newReq
 					metaMap[objKey{key: key.String(), chunkId: chunkId}] = lambdaId
-					fmt.Println("IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					fmt.Println("key is", key.String(), "IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
+					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
+					group.(*Group).Arr[lambdaDestiny].C <- newReq
+					fmt.Println("key is", key.String(), "IN SET UPDATE, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
