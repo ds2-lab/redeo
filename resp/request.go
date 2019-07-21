@@ -169,6 +169,16 @@ func (w *RequestWriter) WriteCmdBulk(cmd string, key string, chunkId string, arg
 	}
 }
 
+// writeCmd cmd & key & val to Redis server
+func (w *RequestWriter) WriteCmdBulkRedis(cmd string, key string, args ...[]byte) {
+	w.w.AppendArrayLen(len(args) + 2)
+	w.w.AppendBulkString(cmd)
+	w.w.AppendBulkString(key)
+	for _, arg := range args {
+		w.w.AppendBulk(arg)
+	}
+}
+
 // writeCmd cmd, key, client uuid, chunkId and val
 func (w *RequestWriter) WriteCmdClient(cmd string, key string, clientId string, chunkId string, lambdaId string, args ...[]byte) {
 	w.w.AppendArrayLen(len(args) + 5)
