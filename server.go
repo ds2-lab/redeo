@@ -27,11 +27,6 @@ type Server struct {
 	mu   sync.RWMutex
 }
 
-type objKey struct {
-	key     string
-	chunkId int64
-}
-
 type Chunk struct {
 	Id   int
 	Body []byte
@@ -57,8 +52,7 @@ type Req struct {
 }
 
 type Response struct {
-	Id Id
-	//ChunkId int64
+	Id   Id
 	Key  string
 	Body []byte
 }
@@ -223,7 +217,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, mappingTable *hashmap.HashMap) error {
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group) error {
 	// start counter to record client id, initial with 0
 	id := 0
 	for {
@@ -244,14 +238,14 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, mapp
 		c := make(chan interface{}, 1024*1024)
 		// store the new client channel to the channel map
 		cMap[id] = c
-		go srv.myServeClient(newClient(cn), c, id, mappingTable)
+		go srv.myServeClient(newClient(cn), c, id, group)
 		// id increment by 1
 		id = id + 1
 	}
 }
 
 // client handler
-func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clientId int, mappingTable *hashmap.HashMap) {
+func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clientId int, group Group) {
 	// make helper channel for every client
 
 	// Release client on exit
@@ -279,10 +273,6 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 		if d := srv.config.Timeout; d > 0 {
 			c.cn.SetDeadline(time.Now().Add(d))
 		}
-		group, ok := mappingTable.Get(0)
-		if ok == false {
-			fmt.Println("get lambda instance failed")
-		}
 		select {
 		//
 		/* blocking on helper channel while peeking cmd*/
@@ -297,30 +287,32 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 				lambdaId, _ := c.cmd.Arg(3).Int()
 				val := c.cmd.Arg(4)
 				// check if the key is existed
+				// key is "key"+"chunkId"
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				if ok == false {
 					// send shard to the corresponding lambda instance in group
 					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
 					// send new request to lambda channel
-					group.(*Group).Arr[lambdaId].C <- newReq
+					group.Arr[lambdaId].C <- newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
 					fmt.Println("KEY is", key.String(), "IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
 					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
-					group.(*Group).Arr[lambdaDestination.(int64)].C <- newReq
+					group.Arr[lambdaDestination.(int64)].C <- newReq
 					fmt.Println("KEY is", key.String(), "IN SET UPDATE, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
+				// key is "key"+"chunkId"
 				fmt.Println("KEY is", key.String(), "IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
 				if ok == false {
 					fmt.Println("KEY is", key.String(), "not found key in lambda store, please set first")
 				}
 				newReq := Req{Id{ClientId: clientId}, cmd, key, nil}
 				// send new request to lambda channel
-				group.(*Group).Arr[lambdaDestination.(int64)].C <- newReq
+				group.Arr[lambdaDestination.(int64)].C <- newReq
 			}
 
 			//reqId += 1
