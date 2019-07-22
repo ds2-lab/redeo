@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
-	"math/rand"
 	"net"
 	"strconv"
 	"strings"
@@ -17,6 +16,8 @@ const (
 )
 
 var metaMap = hashmap.New(1024 * 1024)
+
+var isPrint = true
 
 // Server configuration
 type Server struct {
@@ -295,20 +296,20 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 					// send new request to lambda channel
 					group.Arr[lambdaId].C <- newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
-					fmt.Println("KEY is", key.String(), "IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					myPrint("KEY is", key.String(), "IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
 					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
 					group.Arr[lambdaDestination.(int64)].C <- newReq
-					fmt.Println("KEY is", key.String(), "IN SET UPDATE, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					myPrint("KEY is", key.String(), "IN SET UPDATE, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				// key is "key"+"chunkId"
-				fmt.Println("KEY is", key.String(), "IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
+				myPrint("KEY is", key.String(), "IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
 				if ok == false {
-					fmt.Println("KEY is", key.String(), "not found key in lambda store, please set first")
+					myPrint("KEY is", key.String(), "not found key in lambda store, please set first")
 				}
 				newReq := Req{Id{ClientId: clientId}, cmd, key, nil}
 				// send new request to lambda channel
@@ -321,19 +322,22 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			//
 		case result := <-clientChannel:
 			temp := result.(Chunk)
-			fmt.Println("chunk body len is ", len(temp.Body))
-			//t0 := time.Now()
+			t0 := time.Now()
 			c.wr.AppendInt(int64(temp.Id))
-			//fmt.Println("server append Int time is", time.Since(t0))
-			//t1 := time.Now()
+			time0 := time.Since(t0)
+			t1 := time.Now()
 			c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
-			//fmt.Println("server append Bulk time is", time.Since(t1))
-			//t2 := time.Now()
+			time1 := time.Since(t1)
+			t2 := time.Now()
 			// flush buffer, return on errors
 			if err := c.wr.MyFlush(); err != nil {
 				return
 			}
-			//fmt.Println("server flush to client time is", time.Since(t2))
+			time2 := time.Since(t2)
+			myPrint("Server AppendInt time is", time0,
+				"AppendBulk time is", time1,
+				"Server Flush time is", time2,
+				"Chunk body len is ", len(temp.Body))
 		}
 
 		// flush buffer, return on errors
@@ -391,10 +395,8 @@ func (srv *Server) Serve_client(cn net.Conn) {
 	srv.serveClient(newClient(cn))
 }
 
-func RandomString(len int) string {
-	bytes := make([]byte, len)
-	for i := 0; i < len; i++ {
-		bytes[i] = byte(65 + rand.Intn(25)) //A=65 and Z = 65+25
+func myPrint(a ...interface{}) {
+	if isPrint {
+		fmt.Println(a)
 	}
-	return string(bytes)
 }
