@@ -322,9 +322,11 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			//
 		case result := <-clientChannel:
 			temp := result.(Chunk)
+			// chunk Id
 			t0 := time.Now()
 			c.wr.AppendInt(int64(temp.Id))
 			time0 := time.Since(t0)
+			// chunk Body
 			t1 := time.Now()
 			c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
 			time1 := time.Since(t1)

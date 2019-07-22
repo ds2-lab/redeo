@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type bufioR struct {
@@ -13,6 +14,15 @@ type bufioR struct {
 	buf []byte
 
 	r, w int
+	idx  int
+}
+
+func (b *bufioR) SetIdx(i int) {
+	b.idx = i
+}
+
+func (b *bufioR) GetIdx() int {
+	return b.idx
 }
 
 // Buffered returns the number of buffered bytes
@@ -112,21 +122,29 @@ func (b *bufioR) ReadBulkLen() (int64, error) {
 func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	//temp0 := b.Buffered()
 	//fmt.Println("before require buff len is", temp0)
-	//t0 := time.Now()
+	t0 := time.Now()
 	sz, err := b.ReadBulkLen()
 	if err != nil {
 		return p, err
 	}
+	time0 := time.Since(t0)
 	//fmt.Println("readBulk read len time is ", time.Since(t0))
-	//t1 := time.Now()
+	t1 := time.Now()
 	if err := b.require(int(sz + 2)); err != nil {
 		return p, err
 	}
 	//temp1 := b.Buffered()
 	//fmt.Println("after require buff len is", temp1)
+	time1 := time.Since(t1)
 	//fmt.Println("readBulk require time is ", time.Since(t1))
-	//t2 := time.Now()
+	t2 := time.Now()
 	p = append(p, b.buf[b.r:b.r+int(sz)]...)
+	time2 := time.Since(t2)
+	fmt.Println("Client id is", b.GetIdx(),
+		"ReadBulk ReadLen time is ", time0,
+		"ReadBulk Require time is", time1,
+		"ReadBulk Append time is", time2)
+
 	//fmt.Println("readbulk time is ", time.Since(t2))
 	b.r += int(sz + 2)
 
