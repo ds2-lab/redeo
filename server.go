@@ -342,7 +342,9 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 			time0 := time.Since(t0)
 			// chunk Body
 			t1 := time.Now()
-			c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
+			if temp.Body != nil {
+				c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
+			}
 			time1 := time.Since(t1)
 			t2 := time.Now()
 			// flush buffer, return on errors
