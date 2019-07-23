@@ -296,7 +296,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				parityShards, _ := c.cmd.Arg(5).Int()
 				val := c.cmd.Arg(6)
 				//
-				ReqMap.GetOrInsert(reqId, &ClientReqCounter{key.String(), int(dataShards), int(parityShards), 0})
+				ReqMap.GetOrInsert(reqId, &ClientReqCounter{"set", int(dataShards), int(parityShards), 0})
 				// check if the key is existed
 				// key is "key"+"chunkId"
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
@@ -319,7 +319,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				dataShards, _ := c.cmd.Arg(3).Int()
 				parityShards, _ := c.cmd.Arg(4).Int()
 				//
-				ReqMap.GetOrInsert(reqId, &ClientReqCounter{key.String(), int(dataShards), int(parityShards), 0})
+				ReqMap.GetOrInsert(reqId, &ClientReqCounter{"get", int(dataShards), int(parityShards), 0})
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				// key is "key"+"chunkId"
 				myPrint("KEY is", key.String(), "IN GET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
