@@ -335,7 +335,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 			/* blocking on receive final result from lambda store*/
 			//
 		case result := <-clientChannel:
-			temp := result.(Chunk)
+			temp := result.(*Chunk)
 			// chunk Id
 			t0 := time.Now()
 			c.wr.AppendInt(int64(temp.Id))
