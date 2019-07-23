@@ -306,12 +306,12 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 					// send new request to lambda channel
 					group.Arr[lambdaId].C <- &newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
-					myPrint("KEY is", key.String(), "IN SET, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					myPrint("KEY is", key.String(), "IN SET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
 					newServerReq := ServerReq{Id{connId, reqId, int(chunkId)}, cmd, key, val}
 					group.Arr[lambdaDestination.(int64)].C <- &newServerReq
-					myPrint("KEY is", key.String(), "IN SET UPDATE, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					myPrint("KEY is", key.String(), "IN SET UPDATE, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
@@ -322,7 +322,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				ReqMap.GetOrInsert(reqId, &ClientReqCounter{key.String(), int(dataShards), int(parityShards), 0})
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				// key is "key"+"chunkId"
-				myPrint("KEY is", key.String(), "IN GET, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
+				myPrint("KEY is", key.String(), "IN GET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
 				if ok == false {
 					myPrint("KEY is", key.String(), "not found key in lambda store, please set first")
 				}
