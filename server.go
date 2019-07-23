@@ -291,7 +291,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 			case "set":
 				chunkId, _ := c.cmd.Arg(1).Int()
 				lambdaId, _ := c.cmd.Arg(2).Int()
-				reqId := c.cmd.Arg(3)
+				reqId := c.cmd.Arg(3).String()
 				dataShards, _ := c.cmd.Arg(4).Int()
 				parityShards, _ := c.cmd.Arg(5).Int()
 				val := c.cmd.Arg(6)
@@ -302,20 +302,20 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				if ok == false {
 					// send shard to the corresponding lambda instance in group
-					newReq := ServerReq{Id{connId, reqId.String(), int(chunkId)}, cmd, key, val}
+					newReq := ServerReq{Id{connId, reqId, int(chunkId)}, cmd, key, val}
 					// send new request to lambda channel
 					group.Arr[lambdaId].C <- &newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
 					myPrint("KEY is", key.String(), "IN SET, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
-					newServerReq := ServerReq{Id{connId, reqId.String(), int(chunkId)}, cmd, key, val}
+					newServerReq := ServerReq{Id{connId, reqId, int(chunkId)}, cmd, key, val}
 					group.Arr[lambdaDestination.(int64)].C <- &newServerReq
 					myPrint("KEY is", key.String(), "IN SET UPDATE, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
-				reqId := c.cmd.Arg(2)
+				reqId := c.cmd.Arg(2).String()
 				dataShards, _ := c.cmd.Arg(3).Int()
 				parityShards, _ := c.cmd.Arg(4).Int()
 				//
@@ -326,7 +326,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				if ok == false {
 					myPrint("KEY is", key.String(), "not found key in lambda store, please set first")
 				}
-				newServerReq := ServerReq{Id{ConnId: connId}, cmd, key, nil}
+				newServerReq := ServerReq{Id{ConnId: connId, ReqId: reqId}, cmd, key, nil}
 				// send new request to lambda channel
 				group.Arr[lambdaDestination.(int64)].C <- &newServerReq
 			}
