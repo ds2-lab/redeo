@@ -14,7 +14,7 @@ type bufioR struct {
 	buf []byte
 
 	r, w int
-	idx  int
+	//idx  int
 }
 
 //func (b *bufioR) SetIdx(i int) {
@@ -140,8 +140,7 @@ func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	t2 := time.Now()
 	p = append(p, b.buf[b.r:b.r+int(sz)]...)
 	time2 := time.Since(t2)
-	fmt.Println("Client id is", b.GetIdx(),
-		"ReadBulk ReadLen time is ", time0,
+	fmt.Println("ReadBulk ReadLen time is ", time0,
 		"ReadBulk Require time is", time1,
 		"ReadBulk Append time is", time2)
 
