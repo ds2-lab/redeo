@@ -96,15 +96,15 @@ type ResponseParser interface {
 	Scan(vv ...interface{}) error
 }
 
-type Index interface {
-	SetIdx(int)
-	GetIdx() int
-}
+//type Index interface {
+//	SetIdx(int)
+//	GetIdx() int
+//}
 
 // ResponseReader is used by clients to wrap a server connection and
 // parse responses.
 type ResponseReader interface {
-	Index
+	//Index
 
 	ResponseParser
 

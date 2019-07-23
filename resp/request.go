@@ -180,14 +180,16 @@ func (w *RequestWriter) WriteCmdBulkRedis(cmd string, key string, args ...[]byte
 }
 
 // writeCmd cmd, key, client uuid, chunkId and val
-func (w *RequestWriter) WriteCmdClient(cmd string, key string, clientId string, chunkId string, lambdaId string, args ...[]byte) {
-	w.w.AppendArrayLen(len(args) + 5)
+func (w *RequestWriter) WriteCmdClient(cmd string, key string, chunkId string, lambdaId string, reqId string, d string, p string, args ...[]byte) {
+	w.w.AppendArrayLen(len(args) + 7)
 	w.w.AppendBulkString(cmd)
 	// c.cmd.Arg(0)
 	w.w.AppendBulkString(key)
-	w.w.AppendBulkString(clientId)
 	w.w.AppendBulkString(chunkId)
 	w.w.AppendBulkString(lambdaId)
+	w.w.AppendBulkString(reqId)
+	w.w.AppendBulkString(d)
+	w.w.AppendBulkString(p)
 	for _, arg := range args {
 		w.w.AppendBulk(arg)
 	}
@@ -209,15 +211,6 @@ func (w *RequestWriter) MyWriteCmd(cmd string, clientId string, reqId string, ch
 func (w *RequestWriter) WriteCmdString(cmd string, args ...string) {
 	w.w.AppendArrayLen(len(args) + 1)
 	w.w.AppendBulkString(cmd)
-	for _, arg := range args {
-		w.w.AppendBulkString(arg)
-	}
-}
-
-func (w *RequestWriter) WriteCmdGet(cmd string, chunkId string, args ...string) {
-	w.w.AppendArrayLen(len(args) + 2)
-	w.w.AppendBulkString(cmd)
-	w.w.AppendBulkString(chunkId)
 	for _, arg := range args {
 		w.w.AppendBulkString(arg)
 	}

@@ -17,13 +17,13 @@ type bufioR struct {
 	idx  int
 }
 
-func (b *bufioR) SetIdx(i int) {
-	b.idx = i
-}
-
-func (b *bufioR) GetIdx() int {
-	return b.idx
-}
+//func (b *bufioR) SetIdx(i int) {
+//	b.idx = i
+//}
+//
+//func (b *bufioR) GetIdx() int {
+//	return b.idx
+//}
 
 // Buffered returns the number of buffered bytes
 func (b *bufioR) Buffered() int {

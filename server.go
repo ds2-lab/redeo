@@ -16,6 +16,7 @@ const (
 )
 
 var metaMap = hashmap.New(1024 * 1024)
+var ReqMap = hashmap.New(1024 * 1024)
 
 var isPrint = true
 
@@ -28,6 +29,12 @@ type Server struct {
 	mu   sync.RWMutex
 }
 
+type ClientReqCounter struct {
+	Cmd          string
+	DataShards   int
+	ParityShards int
+	Counter      int32
+}
 type Chunk struct {
 	Id   int
 	Body []byte
@@ -40,12 +47,12 @@ type Index struct {
 }
 
 type Id struct {
-	ClientId int
-	ReqId    int
-	ChunkId  int
+	ConnId  int
+	ReqId   string
+	ChunkId int
 }
 
-type Req struct {
+type ServerReq struct {
 	Id  Id
 	Cmd string
 	Key []byte
@@ -70,7 +77,7 @@ type LambdaInstance struct {
 	Cn        net.Conn
 	W         *resp.RequestWriter
 	R         resp.ResponseReader
-	C         chan Req
+	C         chan *ServerReq
 	AliveLock sync.Mutex
 	Counter   uint64
 }
@@ -220,7 +227,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 // new service goroutine for each.
 func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group) error {
 	// start counter to record client id, initial with 0
-	id := 0
+	connId := 0
 	for {
 		cn, err := lis.Accept()
 		if err != nil {
@@ -238,15 +245,15 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, grou
 		// make channel for every new client
 		c := make(chan interface{}, 1024*1024)
 		// store the new client channel to the channel map
-		cMap[id] = c
-		go srv.myServeClient(newClient(cn), c, id, group)
+		cMap[connId] = c
+		go srv.myServeClient(newClient(cn), c, connId, group)
 		// id increment by 1
-		id = id + 1
+		connId = connId + 1
 	}
 }
 
 // client handler
-func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clientId int, group Group) {
+func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, connId int, group Group) {
 	// make helper channel for every client
 
 	// Release client on exit
@@ -267,7 +274,6 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 	// go routine peeking cmd
 	go myPeekCmd(c, perform, helper)
 
-	//reqId := 0
 	// Init request/response loop
 	for !c.closed {
 		// set deadline
@@ -283,40 +289,48 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, clie
 			key := c.cmd.Arg(0)
 			switch strings.ToLower(cmd) {
 			case "set":
-				//clientId := c.cmd.Arg(1)
-				chunkId, _ := c.cmd.Arg(2).Int()
-				lambdaId, _ := c.cmd.Arg(3).Int()
-				val := c.cmd.Arg(4)
+				chunkId, _ := c.cmd.Arg(1).Int()
+				lambdaId, _ := c.cmd.Arg(2).Int()
+				reqId := c.cmd.Arg(3)
+				dataShards, _ := c.cmd.Arg(4).Int()
+				parityShards, _ := c.cmd.Arg(5).Int()
+				val := c.cmd.Arg(6)
+				//
+				ReqMap.GetOrInsert(reqId, &ClientReqCounter{key.String(), int(dataShards), int(parityShards), 0})
 				// check if the key is existed
 				// key is "key"+"chunkId"
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				if ok == false {
 					// send shard to the corresponding lambda instance in group
-					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
+					newReq := ServerReq{Id{connId, reqId.String(), int(chunkId)}, cmd, key, val}
 					// send new request to lambda channel
-					group.Arr[lambdaId].C <- newReq
+					group.Arr[lambdaId].C <- &newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
-					myPrint("KEY is", key.String(), "IN SET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					myPrint("KEY is", key.String(), "IN SET, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				} else {
 					// update the existed key
-					newReq := Req{Id{ClientId: clientId, ChunkId: int(chunkId)}, cmd, key, val}
-					group.Arr[lambdaDestination.(int64)].C <- newReq
-					myPrint("KEY is", key.String(), "IN SET UPDATE, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					newServerReq := ServerReq{Id{connId, reqId.String(), int(chunkId)}, cmd, key, val}
+					group.Arr[lambdaDestination.(int64)].C <- &newServerReq
+					myPrint("KEY is", key.String(), "IN SET UPDATE, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
+				reqId := c.cmd.Arg(2)
+				dataShards, _ := c.cmd.Arg(3).Int()
+				parityShards, _ := c.cmd.Arg(4).Int()
+				//
+				ReqMap.GetOrInsert(reqId, &ClientReqCounter{key.String(), int(dataShards), int(parityShards), 0})
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				// key is "key"+"chunkId"
-				myPrint("KEY is", key.String(), "IN GET, clientId is", clientId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
+				myPrint("KEY is", key.String(), "IN GET, clientId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
 				if ok == false {
 					myPrint("KEY is", key.String(), "not found key in lambda store, please set first")
 				}
-				newReq := Req{Id{ClientId: clientId}, cmd, key, nil}
+				newServerReq := ServerReq{Id{ConnId: connId}, cmd, key, nil}
 				// send new request to lambda channel
-				group.Arr[lambdaDestination.(int64)].C <- newReq
+				group.Arr[lambdaDestination.(int64)].C <- &newServerReq
 			}
 
-			//reqId += 1
 			//
 			/* blocking on receive final result from lambda store*/
 			//
