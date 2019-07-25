@@ -96,16 +96,9 @@ type ResponseParser interface {
 	Scan(vv ...interface{}) error
 }
 
-//type Index interface {
-//	SetIdx(int)
-//	GetIdx() int
-//}
-
 // ResponseReader is used by clients to wrap a server connection and
 // parse responses.
 type ResponseReader interface {
-	//Index
-
 	ResponseParser
 
 	// Buffered returns the number of buffered (unread) bytes.

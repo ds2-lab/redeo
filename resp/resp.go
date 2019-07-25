@@ -7,6 +7,8 @@ import (
 	"fmt"
 )
 
+var isPrint = true
+
 // ResponseType represents the reply type
 type ResponseType uint8
 
@@ -105,3 +107,9 @@ var (
 const MaxBufferSize = 64 * 1024 * 1024
 
 func mkStdBuffer() []byte { return make([]byte, MaxBufferSize) }
+
+func MyPrint(a ...interface{}) {
+	if isPrint {
+		fmt.Println(a)
+	}
+}
