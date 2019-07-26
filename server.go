@@ -357,7 +357,7 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 			//	"AppendBulk time is", time1,
 			//	"Server Flush time is", time2,
 			//	"Chunk body len is ", len(temp.Body))
-			if err := nanolog.Log(resp.LogServer2Client, time0, time1, time2, len(temp.Body)); err != nil {
+			if err := nanolog.Log(resp.LogServer2Client, time0.String(), time1.String(), time2.String(), len(temp.Body)); err != nil {
 				fmt.Println("LogServer2Client err", err)
 				return
 			}

@@ -133,7 +133,7 @@ func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	//MyPrint("ReadBulk ReadLen time is ", time0,
 	//	"ReadBulk Require time is", time1,
 	//	"ReadBulk Append time is", time2)
-	if err := nanolog.Log(LogServerBufio, time0, time1, time2); err != nil {
+	if err := nanolog.Log(LogServerBufio, time0.String(), time1.String(), time2.String()); err != nil {
 		fmt.Println("LogServerBufio err", err)
 	}
 
