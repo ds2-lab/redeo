@@ -3,7 +3,6 @@ package resp
 import (
 	"fmt"
 	"github.com/ScottMansfield/nanolog"
-	"os"
 )
 
 var (
@@ -32,10 +31,4 @@ func init() {
 		"Sever read field1 chunkId time is %s, " +
 		"Sever PeekType objBody time is %s, " +
 		"Sever read field2 chunkBody time is %s")
-	// Set up nanolog writer
-	nanologout, err := os.Create("proxy.clog")
-	if err != nil {
-		panic(err)
-	}
-	nanolog.SetWriter(nanologout)
 }
