@@ -3,6 +3,7 @@ package resp
 import (
 	"bytes"
 	"fmt"
+	"github.com/ScottMansfield/nanolog"
 	"io"
 	"strconv"
 	"sync"
@@ -129,9 +130,12 @@ func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	t2 := time.Now()
 	p = append(p, b.buf[b.r:b.r+int(sz)]...)
 	time2 := time.Since(t2)
-	MyPrint("ReadBulk ReadLen time is ", time0,
-		"ReadBulk Require time is", time1,
-		"ReadBulk Append time is", time2)
+	//MyPrint("ReadBulk ReadLen time is ", time0,
+	//	"ReadBulk Require time is", time1,
+	//	"ReadBulk Append time is", time2)
+	if err := nanolog.Log(LogServerBufio, time0, time1, time2); err != nil {
+		fmt.Println("LogServerBufio err", err)
+	}
 
 	b.r += int(sz + 2)
 

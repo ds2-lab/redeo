@@ -2,6 +2,7 @@ package redeo
 
 import (
 	"fmt"
+	"github.com/ScottMansfield/nanolog"
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
 	"net"
@@ -294,12 +295,20 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 					// send new request to lambda channel
 					group.Arr[lambdaId].C <- &newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
-					resp.MyPrint("KEY is", key.String(), "IN SET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					//resp.MyPrint("KEY is", key.String(), "IN SET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					//if err := nanolog.Log(resp.LogServer, key.String(), "SET", reqId, connId, chunkId, lambdaId); err != nil {
+					//	fmt.Println("LogServer err", err)
+					//	return
+					//}
 				} else {
 					// update the existed key
 					newServerReq := ServerReq{Id{connId, reqId, int(chunkId)}, cmd, key, val}
 					group.Arr[lambdaDestination.(int64)].C <- &newServerReq
-					resp.MyPrint("KEY is", key.String(), "IN SET UPDATE, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					//resp.MyPrint("KEY is", key.String(), "IN SET UPDATE, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
+					if err := nanolog.Log(resp.LogServer, key.String(), "SET UPDATE", reqId, connId, chunkId, lambdaId); err != nil {
+						fmt.Println("LogServer err", err)
+						return
+					}
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
@@ -308,9 +317,13 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				parityShards, _ := c.cmd.Arg(4).Int()
 				//
 				ReqMap.GetOrInsert(reqId, &ClientReqCounter{"get", int(dataShards), int(parityShards), 0})
-				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				// key is "key"+"chunkId"
-				resp.MyPrint("KEY is", key.String(), "IN GET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
+				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
+				//resp.MyPrint("KEY is", key.String(), "IN GET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaDestination)
+				//if err := nanolog.Log(resp.LogServer, key.String(), "GET", reqId, connId, chunkId, lambdaDestination.(int64)); err != nil {
+				//	fmt.Println("LogServer err", err)
+				//	return
+				//}
 				if ok == false {
 					resp.MyPrint("KEY is", key.String(), "not found key in lambda store, please set first")
 				}
@@ -340,10 +353,15 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				return
 			}
 			time2 := time.Since(t2)
-			resp.MyPrint("Server AppendInt time is", time0,
-				"AppendBulk time is", time1,
-				"Server Flush time is", time2,
-				"Chunk body len is ", len(temp.Body))
+			//resp.MyPrint("Server AppendInt time is", time0,
+			//	"AppendBulk time is", time1,
+			//	"Server Flush time is", time2,
+			//	"Chunk body len is ", len(temp.Body))
+			if err := nanolog.Log(resp.LogServer2Client, time0, time1, time2, len(temp.Body)); err != nil {
+				fmt.Println("LogServer2Client err", err)
+				return
+			}
+
 		}
 
 		// flush buffer, return on errors
