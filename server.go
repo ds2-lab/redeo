@@ -305,10 +305,10 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 					newServerReq := ServerReq{Id{connId, reqId, int(chunkId)}, cmd, key, val}
 					group.Arr[lambdaDestination.(int64)].C <- &newServerReq
 					//resp.MyPrint("KEY is", key.String(), "IN SET UPDATE, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
-					if err := nanolog.Log(resp.LogServer, key.String(), "SET UPDATE", reqId, connId, chunkId, lambdaId); err != nil {
-						fmt.Println("LogServer err", err)
-						return
-					}
+					//if err := nanolog.Log(resp.LogServer, key.String(), "SET UPDATE", reqId, connId, chunkId, lambdaId); err != nil {
+					//	fmt.Println("LogServer err", err)
+					//	return
+					//}
 				}
 			case "get":
 				chunkId, _ := c.cmd.Arg(1).Int()
