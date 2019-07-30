@@ -5,6 +5,7 @@ import (
 	"github.com/ScottMansfield/nanolog"
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
@@ -217,7 +218,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, file string) error {
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, file string, expected int) error {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM|syscall.SIGINT|syscall.SIGKILL)
 	// start counter to record client id, initial with 0
@@ -247,6 +248,13 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, grou
 			go srv.myServeClient(newClient(cn), c, connId, group)
 			// id increment by 1
 			connId = connId + 1
+			if connId == expected {
+				err := ioutil.WriteFile(file, []byte(fmt.Sprintf("%d", os.Getpid())), 0660)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println("lambda store ready!")
+			}
 		}
 
 	}
