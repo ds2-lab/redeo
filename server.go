@@ -255,6 +255,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, grou
 				}
 				fmt.Println("lambda store ready!")
 			}
+			fmt.Println("expected", expected, "conn id is", connId)
 		}
 
 	}
