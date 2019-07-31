@@ -5,7 +5,6 @@ import (
 	"github.com/ScottMansfield/nanolog"
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
@@ -39,8 +38,9 @@ type ClientReqCounter struct {
 	Counter      int32
 }
 type Chunk struct {
-	Id   int
-	Body []byte
+	ChunkId int
+	ReqId   string
+	Body    []byte
 }
 
 type Id struct {
@@ -218,7 +218,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, file string, expected int) error {
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, file string, logger func(handle nanolog.Handle, args ...interface{}) error) error {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM|syscall.SIGINT|syscall.SIGKILL)
 	// start counter to record client id, initial with 0
@@ -227,6 +227,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, grou
 		select {
 		case <-sig:
 			os.Remove(file)
+			return nil
 		default:
 			cn, err := lis.Accept()
 			if err != nil {
@@ -245,24 +246,16 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, grou
 			c := make(chan interface{}, 1024*1024)
 			// store the new client channel to the channel map
 			cMap[connId] = c
-			go srv.myServeClient(newClient(cn), c, connId, group)
+			go srv.MyServeClient(newClient(cn), c, connId, group, logger)
 			// id increment by 1
 			connId = connId + 1
-			if connId == expected {
-				err := ioutil.WriteFile(file, []byte(fmt.Sprintf("%d", os.Getpid())), 0660)
-				if err != nil {
-					fmt.Println(err)
-				}
-				fmt.Println("lambda store ready!")
-			}
-			fmt.Println("expected", expected, "conn id is", connId)
 		}
 
 	}
 }
 
 // client handler
-func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, connId int, group Group) {
+func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, connId int, group Group, logger func(handle nanolog.Handle, args ...interface{}) error) {
 	// make helper channel for every client
 
 	// Release client on exit
@@ -335,6 +328,9 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 				reqId := c.cmd.Arg(2).String()
 				dataShards, _ := c.cmd.Arg(3).Int()
 				parityShards, _ := c.cmd.Arg(4).Int()
+				if err := logger(resp.LogStart, reqId, chunkId, time.Now().UnixNano()); err != nil {
+					fmt.Println("log start err is ", err)
+				}
 				//
 				ReqMap.GetOrInsert(reqId, &ClientReqCounter{"get", int(dataShards), int(parityShards), 0})
 				// key is "key"+"chunkId"
@@ -356,11 +352,10 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 			/* blocking on receive final result from lambda store*/
 			//
 		case result := <-clientChannel:
+			t := time.Now()
 			temp := result.(*Chunk)
 			// chunk Id
-			t0 := time.Now()
-			c.wr.AppendInt(int64(temp.Id))
-			time0 := time.Since(t0)
+			c.wr.AppendInt(int64(temp.ChunkId))
 			// chunk Body
 			t1 := time.Now()
 			if temp.Body != nil {
@@ -377,7 +372,9 @@ func (srv *Server) myServeClient(c *Client, clientChannel chan interface{}, conn
 			//	"AppendBulk time is", time1,
 			//	"Server Flush time is", time2,
 			//	"Chunk body len is ", len(temp.Body))
-			if err := nanolog.Log(resp.LogServer2Client, time0.String(), time1.String(), time2.String(), len(temp.Body)); err != nil {
+			t0 := time.Now()
+			time0 := t0.Sub(t)
+			if err := logger(resp.LogServer2Client, temp.ReqId, temp.ChunkId, time0.String(), time1.String(), time2.String(), t0.UnixNano()); err != nil {
 				fmt.Println("LogServer2Client err", err)
 				return
 			}

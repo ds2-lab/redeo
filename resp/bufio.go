@@ -3,11 +3,9 @@ package resp
 import (
 	"bytes"
 	"fmt"
-	"github.com/ScottMansfield/nanolog"
 	"io"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type bufioR struct {
@@ -114,28 +112,28 @@ func (b *bufioR) ReadBulkLen() (int64, error) {
 func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	//temp0 := b.Buffered()
 	//fmt.Println("before require buff len is", temp0)
-	t0 := time.Now()
+	//t0 := time.Now()
 	sz, err := b.ReadBulkLen()
 	if err != nil {
 		return p, err
 	}
-	time0 := time.Since(t0)
-	t1 := time.Now()
+	//time0 := time.Since(t0)
+	//t1 := time.Now()
 	if err := b.require(int(sz + 2)); err != nil {
 		return p, err
 	}
 	//temp1 := b.Buffered()
 	//fmt.Println("after require buff len is", temp1)
-	time1 := time.Since(t1)
-	t2 := time.Now()
+	//time1 := time.Since(t1)
+	//t2 := time.Now()
 	p = append(p, b.buf[b.r:b.r+int(sz)]...)
-	time2 := time.Since(t2)
+	//time2 := time.Since(t2)
 	//MyPrint("ReadBulk ReadLen time is ", time0,
 	//	"ReadBulk Require time is", time1,
 	//	"ReadBulk Append time is", time2)
-	if err := nanolog.Log(LogServerBufio, time0.String(), time1.String(), time2.String()); err != nil {
-		fmt.Println("LogServerBufio err", err)
-	}
+	//if err := nanolog.Log(LogServerBufio, time0.String(), time1.String(), time2.String()); err != nil {
+	//	fmt.Println("LogServerBufio err", err)
+	//}
 
 	b.r += int(sz + 2)
 
