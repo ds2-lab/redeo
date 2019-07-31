@@ -220,7 +220,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, file string, logger func(handle nanolog.Handle, args ...interface{}) error) error {
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, file string, logger func(handle nanolog.Handle, args ...interface{}) error, done chan struct{}) error {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM|syscall.SIGINT|syscall.SIGKILL)
 	// start counter to record client id, initial with 0
@@ -228,6 +228,7 @@ func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, grou
 	for {
 		select {
 		case <-sig:
+			close(done)
 			os.Remove(file)
 			return nil
 		default:
