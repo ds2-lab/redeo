@@ -10,10 +10,10 @@ var (
 	LogServer2Client nanolog.Handle
 	//LogServer        nanolog.Handle
 	//LogServerBufio   nanolog.Handle
-	LogProxy nanolog.Handle = 1
-	LogData  nanolog.Handle = 2
-	LogStart nanolog.Handle = 3
-	LogLambda nanolog.Handle = 4
+	LogProxy nanolog.Handle = 10001
+	LogData  nanolog.Handle = 10002
+	LogStart nanolog.Handle = 10003
+	LogLambda nanolog.Handle = 10004
 )
 
 func MyPrint(a ...interface{}) {
