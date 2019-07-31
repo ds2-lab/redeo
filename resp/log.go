@@ -10,9 +10,9 @@ var (
 	LogServer2Client nanolog.Handle
 	//LogServer        nanolog.Handle
 	//LogServerBufio   nanolog.Handle
-	LogProxy nanolog.Handle = 10001
-	LogData  nanolog.Handle = 10002
-	LogStart nanolog.Handle = 10003
+	LogProxy  nanolog.Handle = 10001
+	LogData   nanolog.Handle = 10002
+	LogStart  nanolog.Handle = 10003
 	LogLambda nanolog.Handle = 10004
 )
 
@@ -31,6 +31,6 @@ func init() {
 	//"Sever PeekType chunkId time is %s, " +
 	//"Sever read field1 chunkId time is %s, " +
 	//	"Sever PeekType objBody time is %s, " +
-	LogData = nanolog.AddLogger("%s, %s, %i64, %i64, %i64, %i64, %i64, %i64, %i64, %i64, %i64")
-	LogLambda = nanolog.AddLogger("%s, %s, %s, %i64, %s, %i64, %i64, %i64")
+	LogData = nanolog.AddLogger("%s,%s,%i64,%i64,%i64,%i64,%i64,%i64,%i64,%i64,%i64")
+	LogLambda = nanolog.AddLogger("%s,%s,%s,%s,%s,%i64,%i64,%i64")
 }
