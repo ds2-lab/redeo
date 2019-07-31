@@ -6,12 +6,9 @@ import (
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
 	"net"
-	"os"
-	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -220,40 +217,36 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, file string, logger func(handle nanolog.Handle, args ...interface{}) error, done chan struct{}) error {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGTERM|syscall.SIGINT|syscall.SIGKILL)
+func (srv *Server) MyServe(lis net.Listener, cMap map[int]chan interface{}, group Group, logger func(handle nanolog.Handle, args ...interface{}) error, done chan struct{}) error {
 	// start counter to record client id, initial with 0
 	connId := 0
 	for {
-		select {
-		case <-sig:
-			close(done)
-			os.Remove(file)
-			return nil
-		default:
-			cn, err := lis.Accept()
-			if err != nil {
-				return err
+		cn, err := lis.Accept()
+		if err != nil {
+			select {
+			case <-done:
+				// server closed
+				return nil
+			default:
 			}
-			fmt.Println("Accept", cn.RemoteAddr())
-
-			if ka := srv.config.TCPKeepAlive; ka > 0 {
-				if tc, ok := cn.(*net.TCPConn); ok {
-					tc.SetKeepAlive(true)
-					tc.SetKeepAlivePeriod(ka)
-				}
-			}
-
-			// make channel for every new client
-			c := make(chan interface{}, 1024*1024)
-			// store the new client channel to the channel map
-			cMap[connId] = c
-			go srv.MyServeClient(newClient(cn), c, connId, group, logger)
-			// id increment by 1
-			connId = connId + 1
+			fmt.Println("Failed to accecpt connection: ", err)
+			continue
 		}
+		fmt.Println("Accept", cn.RemoteAddr())
 
+		if ka := srv.config.TCPKeepAlive; ka > 0 {
+			if tc, ok := cn.(*net.TCPConn); ok {
+				tc.SetKeepAlive(true)
+				tc.SetKeepAlivePeriod(ka)
+			}
+		}
+		// make channel for every new client
+		c := make(chan interface{}, 1024*1024)
+		// store the new client channel to the channel map
+		cMap[connId] = c
+		go srv.MyServeClient(newClient(cn), c, connId, group, logger)
+		// id increment by 1
+		connId = connId + 1
 	}
 }
 
