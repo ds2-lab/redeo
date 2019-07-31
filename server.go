@@ -39,7 +39,7 @@ type ClientReqCounter struct {
 }
 type Chunk struct {
 	Cmd     string
-	ChunkId int
+	ChunkId int64
 	ReqId   string
 	Body    []byte
 }
@@ -47,7 +47,7 @@ type Chunk struct {
 type Id struct {
 	ConnId  int
 	ReqId   string
-	ChunkId int
+	ChunkId int64
 }
 
 type ServerReq struct {
@@ -309,7 +309,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				lambdaDestination, ok := metaMap.Get(key.String() + strconv.FormatInt(chunkId, 10))
 				if ok == false {
 					// send shard to the corresponding lambda instance in group
-					newReq := ServerReq{Id{connId, reqId, int(chunkId)}, cmd, key, val}
+					newReq := ServerReq{Id{connId, reqId, chunkId}, cmd, key, val}
 					// send new request to lambda channel
 					group.Arr[lambdaId].C <- &newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
@@ -320,7 +320,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 					//}
 				} else {
 					// update the existed key
-					newServerReq := ServerReq{Id{connId, reqId, int(chunkId)}, cmd, key, val}
+					newServerReq := ServerReq{Id{connId, reqId, chunkId}, cmd, key, val}
 					group.Arr[lambdaDestination.(int64)].C <- &newServerReq
 					//resp.MyPrint("KEY is", key.String(), "IN SET UPDATE, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 					//if err := nanolog.Log(resp.LogServer, key.String(), "SET UPDATE", reqId, connId, chunkId, lambdaId); err != nil {

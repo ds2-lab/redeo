@@ -25,7 +25,7 @@ func init() {
 	LogServer2Client = nanolog.AddLogger("Cmd is %s, sReqId is %s, ChunkId is %i, Server2Client total time is %i64, AppendBulk time is %i64, Flush time is %i64, TimeStamp is %i64")
 	//LogServer = nanolog.AddLogger("KEY is %s, IN %s, ReqID is %s, ConnID is %i, ChunkID is %i64, LambdaStoreID is %i64")
 	//LogServerBufio = nanolog.AddLogger("ReadBulk ReadLen time is %s, ReadBulk Require time is %s, ReadBulk Append time is %s")
-	LogProxy = nanolog.AddLogger("Cmd is %s, ReqId is %s, ChunkId is %i, lambda2Server total time is %i64, First byte is %i64, Sever read chunkBody is %i64")
+	LogProxy = nanolog.AddLogger("Cmd is %s, ReqId is %s, ChunkId is %i64, lambda2Server total time is %i64, First byte is %i64, Sever read chunkBody is %i64")
 	//"Sever read field0 clientId time is %s, " +
 	//"Sever PeekType chunkId time is %s, " +
 	//"Sever read field1 chunkId time is %s, " +
