@@ -62,7 +62,7 @@ type Response struct {
 }
 
 type Group struct {
-	Arr        []LambdaInstance
+	Arr        []*LambdaInstance
 	MemCounter uint64
 }
 

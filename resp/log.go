@@ -13,6 +13,7 @@ var (
 	LogProxy nanolog.Handle = 1
 	LogData  nanolog.Handle = 2
 	LogStart nanolog.Handle = 3
+	LogLambda nanolog.Handle = 4
 )
 
 func MyPrint(a ...interface{}) {
@@ -31,4 +32,5 @@ func init() {
 	//"Sever read field1 chunkId time is %s, " +
 	//	"Sever PeekType objBody time is %s, " +
 	LogData = nanolog.AddLogger("%s, %s, %i64, %i64, %i64, %i64, %i64, %i64, %i64, %i64, %i64")
+	LogLambda = nanolog.AddLogger("%s, %s, %s, %i64, %s, %i64, %i64, %i64")
 }
