@@ -359,14 +359,19 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 		case result := <-clientChannel:
 			t := time.Now()
 			temp := result.(*Chunk)
-			// chunk Id
-			c.wr.AppendInt(int64(temp.ChunkId))
-			// chunk Body
-			t1 := time.Now()
-			if temp.Body != nil {
+
+			var time1 time.Duration
+			if temp.Body == nil {
+				c.wr.AppendInt(int64(-1))
+			} else {
+				// chunk Id
+				c.wr.AppendInt(int64(temp.ChunkId))
+				// chunk Body
+				t1 := time.Now()
 				c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
+				time1 = time.Since(t1)
 			}
-			time1 := time.Since(t1)
+
 			t2 := time.Now()
 			// flush buffer, return on errors
 			if err := c.wr.MyFlush(); err != nil {
