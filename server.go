@@ -38,6 +38,7 @@ type ClientReqCounter struct {
 	Counter      int32
 }
 type Chunk struct {
+	Cmd     string
 	ChunkId int
 	ReqId   string
 	Body    []byte
@@ -57,6 +58,7 @@ type ServerReq struct {
 }
 
 type Response struct {
+	Cmd  string
 	Id   Id
 	Key  string
 	Body []byte
@@ -297,6 +299,9 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				dataShards, _ := c.cmd.Arg(4).Int()
 				parityShards, _ := c.cmd.Arg(5).Int()
 				val := c.cmd.Arg(6)
+				if err := logger(resp.LogStart, "set", reqId, chunkId, time.Now().UnixNano()); err != nil {
+					fmt.Println("log start err is ", err)
+				}
 				//
 				ReqMap.GetOrInsert(reqId, &ClientReqCounter{"set", int(dataShards), int(parityShards), 0})
 				// check if the key is existed
@@ -328,7 +333,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				reqId := c.cmd.Arg(2).String()
 				dataShards, _ := c.cmd.Arg(3).Int()
 				parityShards, _ := c.cmd.Arg(4).Int()
-				if err := logger(resp.LogStart, reqId, chunkId, time.Now().UnixNano()); err != nil {
+				if err := logger(resp.LogStart, "get", reqId, chunkId, time.Now().UnixNano()); err != nil {
 					fmt.Println("log start err is ", err)
 				}
 				//
@@ -374,7 +379,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 			//	"Chunk body len is ", len(temp.Body))
 			t0 := time.Now()
 			time0 := t0.Sub(t)
-			if err := logger(resp.LogServer2Client, temp.ReqId, temp.ChunkId, int64(time0), int64(time1), int64(time2), t0.UnixNano()); err != nil {
+			if err := logger(resp.LogServer2Client, temp.Cmd, temp.ReqId, temp.ChunkId, int64(time0), int64(time1), int64(time2), t0.UnixNano()); err != nil {
 				fmt.Println("LogServer2Client err", err)
 				return
 			}
