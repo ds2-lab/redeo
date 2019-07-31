@@ -374,7 +374,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 			//	"Chunk body len is ", len(temp.Body))
 			t0 := time.Now()
 			time0 := t0.Sub(t)
-			if err := logger(resp.LogServer2Client, temp.ReqId, temp.ChunkId, time0.(int64), time1.(int64), time2.(int64), t0.UnixNano()); err != nil {
+			if err := logger(resp.LogServer2Client, temp.ReqId, temp.ChunkId, int64(time0), int64(time1), int64(time2), t0.UnixNano()); err != nil {
 				fmt.Println("LogServer2Client err", err)
 				return
 			}
