@@ -32,5 +32,5 @@ func init() {
 	//"Sever read field1 chunkId time is %s, " +
 	//	"Sever PeekType objBody time is %s, " +
 	LogData = nanolog.AddLogger("%s,%s,%i64,%i64,%i64,%i64,%i64,%i64,%i64,%i64,%i64")
-	LogLambda = nanolog.AddLogger("%s,%s,%s,%s,%s,%i64,%i64,%i64")
+	LogLambda = nanolog.AddLogger("%s,%s,%s,%s,%s,%s,%s,%s")
 }
