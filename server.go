@@ -217,7 +217,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}*/ cMap hashmap.HashMap, group Group, logger func(handle nanolog.Handle, args ...interface{}) error, done chan struct{}) error {
+func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}, cMap hashmap.HashMap*/ cMap []chan interface{}, group Group, logger func(handle nanolog.Handle, args ...interface{}) error, done chan struct{}) error {
 	// start counter to record client id, initial with 0
 	connId := 0
 	for {
@@ -243,8 +243,8 @@ func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}*/ c
 		// make channel for every new client
 		c := make(chan interface{}, 1024*1024)
 		// store the new client channel to the channel map
-		//cMap[connId] = c
-		cMap.Set(connId, c)
+		cMap[connId] = c
+		//cMap.Set(connId, c)
 		go srv.MyServeClient(newClient(cn), c, connId, group, logger)
 		// id increment by 1
 		connId = connId + 1
