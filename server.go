@@ -357,10 +357,12 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 
 			var time1 time.Duration
 			if temp.Body == nil {
-				c.wr.AppendInt(int64(-1))
+				//c.wr.AppendInt(int64(-1))
+				c.wr.AppendBulkString("-1")
 			} else {
 				// chunk Id
-				c.wr.AppendInt(int64(temp.ChunkId))
+				chunkId := strconv.FormatInt(temp.ChunkId, 10)
+				c.wr.AppendBulkString(chunkId)
 				// chunk Body
 				t1 := time.Now()
 				c.wr.AppendBulk(temp.Body[0:len(temp.Body)])
