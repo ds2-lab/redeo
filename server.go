@@ -76,6 +76,7 @@ type LambdaInstance struct {
 	C         chan *ServerReq
 	AliveLock sync.Mutex
 	Counter   uint64
+	Closed    bool
 }
 
 // NewServer creates a new server instance
