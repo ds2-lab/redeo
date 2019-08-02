@@ -236,7 +236,19 @@ func (b *bufioR) PeekLine(offset int) (bufioLn, error) {
 	if index < 0 {
 		return nil, errInlineRequestTooLong
 	}
-	return bufioLn(b.buf[start : start+index+2]), nil
+
+	// FIXED: Ensure there is (offset + index + 2) to read.
+	if (start + index + 1) >= b.w {
+		// fmt.Println("CR read without LF")
+		b.require(offset + index + 2)
+		start = b.r + offset
+	}
+	// Proved to be not a problem
+	// if b.buf[start + index + 1] != '\n' {
+	// 	fmt.Printf("Detected non LF after CR: %v", b.buf[start : start + index + 2])
+	// 	return bufioLn(b.buf[start : start + index + 1]), nil
+	// }
+	return bufioLn(b.buf[start : start + index + 2]), nil
 }
 
 // ReadLine returns the next line until CRLF
