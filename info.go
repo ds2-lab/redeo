@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bsm/redeo/info"
+	"github.com/wangaoone/redeo/info"
 )
 
 // CommandDescription describes supported commands
@@ -47,6 +47,8 @@ type CommandDescription struct {
 
 // ClientInfo contains client stats
 type ClientInfo struct {
+	Client  *Client
+
 	// ID is the internal client ID
 	ID uint64
 
@@ -66,6 +68,7 @@ type ClientInfo struct {
 
 func newClientInfo(c *Client, now time.Time) *ClientInfo {
 	return &ClientInfo{
+		Client:     c,
 		ID:         c.id,
 		RemoteAddr: c.RemoteAddr().String(),
 		CreateTime: now,
@@ -207,7 +210,11 @@ func (s *clientStats) Cmd(clientID uint64, cmd string) {
 
 func (s *clientStats) Del(clientID uint64) {
 	s.mu.Lock()
-	delete(s.stats, clientID)
+	// Release client reference
+	if info, exist := s.stats[clientID]; exist {
+		info.Client = nil
+		delete(s.stats, clientID)
+	}
 	s.mu.Unlock()
 }
 

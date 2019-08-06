@@ -16,6 +16,7 @@ type Server struct {
 
 	cmds map[string]interface{}
 	mu   sync.RWMutex
+	released *sync.WaitGroup
 }
 
 // NewServer creates a new server instance
@@ -78,14 +79,41 @@ func (srv *Server) Serve(lis net.Listener) error {
 	}
 }
 
+func (srv *Server) Close(lis net.Listener) {
+	lis.Close()
+}
+
+func (srv *Server) Release() {
+	infos := srv.info.clients.All()
+	srv.released = &sync.WaitGroup{}
+	for i := 0; i < len(infos); i++ {
+		srv.released.Add(1)
+		infos[i].Client.Close()
+		infos[i].Client = nil
+	}
+	srv.released.Wait()
+	srv.released = nil
+}
+
+func (srv *Server) register(c *Client) {
+	srv.info.register(c)
+}
+
+func (srv *Server) deregister(clientID uint64) {
+	srv.info.deregister(clientID)
+	if srv.released != nil {
+		srv.released.Done()
+	}
+}
+
 // Starts a new session, serving client
 func (srv *Server) serveClient(c *Client) {
 	// Release client on exit
 	defer c.release()
 
 	// Register client
-	srv.info.register(c)
-	defer srv.info.deregister(c.id)
+	srv.register(c)
+	defer srv.deregister(c.id)
 
 	// Create perform callback
 	perform := func(name string) error {
