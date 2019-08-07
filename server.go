@@ -287,8 +287,8 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 	//defer close(clientChannel)
 
 	// Register client
-	srv.info.register(c)
-	defer srv.info.deregister(c.id)
+	srv.register(c)
+	defer srv.deregister(c.id)
 
 	helper := make(chan string, 1024*1024)
 	// Create perform callback
