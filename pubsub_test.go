@@ -1,8 +1,8 @@
 package redeo
 
 import (
-	"github.com/bsm/redeo/redeotest"
-	"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo/redeotest"
+	"github.com/wangaoone/redeo/resp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

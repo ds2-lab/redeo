@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo/resp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -303,6 +303,30 @@ var _ = Describe("Server", func() {
 		})
 	})
 
+	It("should handle connection close", func() {
+		runServer(subject, func(cn net.Conn, cw *resp.RequestWriter, cr resp.ResponseReader) {
+			cn.Close()
+
+			time.Sleep(1 * time.Second)
+
+			// connection should be closed
+			num := subject.Info().NumClients()
+			Expect(num).To(Equal(0))
+		})
+	})
+
+	It("should shut down gracefully", func() {
+		runServer(subject, func(cn net.Conn, cw *resp.RequestWriter, cr resp.ResponseReader) {
+			// connection is active
+			cw.WriteCmd("PING")
+			Expect(cw.Flush()).To(Succeed())
+
+			subject.Release()
+
+			num := subject.Info().NumClients()
+			Expect(num).To(Equal(0))
+		})
+	})
 })
 
 // --------------------------------------------------------------------

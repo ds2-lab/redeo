@@ -2,7 +2,7 @@ package redeo
 
 import (
 	"context"
-	//"github.com/bsm/redeo/resp"
+	"io"
 	"github.com/wangaoone/redeo/resp"
 	"net"
 	"sync"
@@ -96,6 +96,9 @@ func (c *Client) pipeline(fn func(string) error) error {
 	for more := true; more; more = c.rd.Buffered() != 0 {
 		name, err := c.rd.PeekCmd()
 		if err != nil {
+			if err == io.EOF {
+				return err
+			}
 			_ = c.rd.SkipCmd()
 			return err
 		}
@@ -112,6 +115,9 @@ func (c *Client) peekCmd(fn func(string) error, channel chan string) error {
 		//fmt.Println("peeking cmd name...")
 		cmdName, err := c.rd.PeekCmd()
 		if err != nil {
+			if err == io.EOF {
+				return err
+			}
 			_ = c.rd.SkipCmd()
 			//fmt.Println("err1", err)
 			return err

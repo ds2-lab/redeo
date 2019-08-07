@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/bsm/pool"
-	"github.com/bsm/redeo/client"
-	"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo/client"
+	"github.com/wangaoone/redeo/resp"
 )
 
 func ExamplePool() {

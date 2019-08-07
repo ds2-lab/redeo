@@ -4,8 +4,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/bsm/redeo"
-	"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo"
+	"github.com/wangaoone/redeo/resp"
 )
 
 func ExampleServer() {

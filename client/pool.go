@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/bsm/pool"
-	"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo/resp"
 )
 
 // Pool is a minimalist redis client connection pool

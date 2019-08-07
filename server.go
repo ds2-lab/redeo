@@ -2,6 +2,7 @@ package redeo
 
 import (
 	"fmt"
+	"io"
 	"github.com/ScottMansfield/nanolog"
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
@@ -26,6 +27,7 @@ type Server struct {
 
 	cmds map[string]interface{}
 	mu   sync.RWMutex
+	released *sync.WaitGroup
 }
 
 type ClientReqCounter struct {
@@ -127,7 +129,6 @@ func (srv *Server) Serve(lis net.Listener) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("Accept", cn.RemoteAddr())
 
 		if ka := srv.config.TCPKeepAlive; ka > 0 {
 			if tc, ok := cn.(*net.TCPConn); ok {
@@ -140,13 +141,41 @@ func (srv *Server) Serve(lis net.Listener) error {
 	}
 }
 
+func (srv *Server) Close(lis net.Listener) {
+	lis.Close()
+}
+
+func (srv *Server) Release() {
+	infos := srv.info.clients.All()
+	srv.released = &sync.WaitGroup{}
+	for i := 0; i < len(infos); i++ {
+		srv.released.Add(1)
+		infos[i].Client.Close()
+		infos[i].Client = nil
+	}
+	srv.released.Wait()
+	srv.released = nil
+}
+
+func (srv *Server) register(c *Client) {
+	srv.info.register(c)
+}
+
+func (srv *Server) deregister(clientID uint64) {
+	srv.info.deregister(clientID)
+	if srv.released != nil {
+		srv.released.Done()
+	}
+}
+
+// Starts a new session, serving client
 func (srv *Server) serveClient(c *Client) {
 	// Release client on exit
 	defer c.release()
 
 	// Register client
-	srv.info.register(c)
-	defer srv.info.deregister(c.id)
+	srv.register(c)
+	defer srv.deregister(c.id)
 
 	// Create perform callback
 	perform := func(name string) error {
@@ -218,20 +247,14 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}, cMap hashmap.HashMap*/ cMap []chan interface{}, group Group, logger func(handle nanolog.Handle, args ...interface{}) error, done chan struct{}) error {
+func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}, cMap hashmap.HashMap*/ cMap []chan interface{}, group Group, logger func(handle nanolog.Handle, args ...interface{}) error) error {
 	// start counter to record client id, initial with 0
 	connId := 0
 	for {
 		cn, err := lis.Accept()
 		if err != nil {
-			select {
-			case <-done:
-				// server closed
-				return nil
-			default:
-			}
-			fmt.Println("Failed to accecpt connection: ", err)
-			continue
+			// Assuming the close err is the only err.
+			return err
 		}
 		fmt.Println("Accept", cn.RemoteAddr())
 
@@ -400,6 +423,12 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 func myPeekCmd(c *Client, fn func(string) error, channel chan string) {
 	for {
 		if err := c.peekCmd(fn, channel); err != nil {
+			// Connection Closed
+			if err == io.EOF {
+				c.Close()
+				return
+			}
+
 			c.wr.AppendError("ERR " + err.Error())
 			if !resp.IsProtocolError(err) {
 				_ = c.wr.Flush()
