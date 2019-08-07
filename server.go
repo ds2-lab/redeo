@@ -2,10 +2,10 @@ package redeo
 
 import (
 	"fmt"
-	"io"
 	"github.com/ScottMansfield/nanolog"
 	"github.com/cornelk/hashmap"
 	"github.com/wangaoone/redeo/resp"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -25,8 +25,8 @@ type Server struct {
 	config *Config
 	info   *ServerInfo
 
-	cmds map[string]interface{}
-	mu   sync.RWMutex
+	cmds     map[string]interface{}
+	mu       sync.RWMutex
 	released *sync.WaitGroup
 }
 
@@ -79,6 +79,7 @@ type LambdaInstance struct {
 	AliveLock sync.Mutex
 	Counter   uint64
 	Closed    bool
+	Busy      int32
 }
 
 // NewServer creates a new server instance
