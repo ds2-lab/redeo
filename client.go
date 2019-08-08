@@ -2,8 +2,9 @@ package redeo
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"github.com/wangaoone/redeo/resp"
+	"io"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -116,15 +117,21 @@ func (c *Client) peekCmd(fn func(string) error, channel chan string) error {
 		cmdName, err := c.rd.PeekCmd()
 		if err != nil {
 			if err == io.EOF {
+				channel <- "close"
 				return err
 			}
 			_ = c.rd.SkipCmd()
-			//fmt.Println("err1", err)
-			return err
+			fmt.Println("SkipCmd err", err)
+			//channel <- "close"
+			//return err
+			continue
+
 		}
 		if err := fn(cmdName); err != nil {
-			//fmt.Println("err2", err)
-			return err
+			fmt.Println("fn(cmdName) err", err)
+			//channel <- "err"
+			//return err
+			continue
 		}
 		// send the cmd name to the helper channel
 		channel <- cmdName

@@ -163,6 +163,7 @@ func (srv *Server) register(c *Client) {
 }
 
 func (srv *Server) deregister(clientID uint64) {
+	fmt.Println("before srv.info.deregister")
 	srv.info.deregister(clientID)
 	if srv.released != nil {
 		srv.released.Done()
@@ -302,7 +303,8 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 	for !c.closed {
 		// set deadline
 		if d := srv.config.Timeout; d > 0 {
-			c.cn.SetDeadline(time.Now().Add(d))
+			//c.cn.SetDeadline(time.Now().Add(d))
+			c.cn.SetDeadline(time.Now().Add(5 * time.Second))
 		}
 		select {
 		//
@@ -371,6 +373,8 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				newServerReq := ServerReq{Id{ConnId: connId, ReqId: reqId}, cmd, key, nil}
 				// send new request to lambda channel
 				group.Arr[lambdaDestination.(int64)].C <- &newServerReq
+			case "close":
+				return
 			}
 
 			//
