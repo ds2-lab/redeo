@@ -69,17 +69,18 @@ type Group struct {
 }
 
 type LambdaInstance struct {
-	Name      string
-	Id        int
-	Alive     bool
-	Cn        net.Conn
-	W         *resp.RequestWriter
-	R         resp.ResponseReader
-	C         chan *ServerReq
-	AliveLock sync.Mutex
-	Counter   uint64
-	Closed    bool
-	Busy      int32
+	Name         string
+	Id           int
+	Alive        bool
+	Cn           net.Conn
+	W            *resp.RequestWriter
+	R            resp.ResponseReader
+	C            chan *ServerReq
+	AliveLock    sync.Mutex
+	Counter      uint64
+	Closed       bool
+	Validating   int32 // 0 --> not validating 1 --> validating
+	ChanValidate chan bool
 }
 
 // NewServer creates a new server instance
