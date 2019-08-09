@@ -64,23 +64,12 @@ type Response struct {
 }
 
 type Group struct {
-	Arr        []*LambdaInstance
+	Arr        []LambdaInstance
 	MemCounter uint64
 }
 
-type LambdaInstance struct {
-	Name         string
-	Id           int
-	Alive        bool
-	Cn           net.Conn
-	W            *resp.RequestWriter
-	R            resp.ResponseReader
-	C            chan *ServerReq
-	AliveLock    sync.Mutex
-	Counter      uint64
-	Closed       bool
-	Validating   int32 // 0 --> not validating 1 --> validating
-	ChanValidate chan bool
+type LambdaInstance interface {
+	C() chan *ServerReq
 }
 
 // NewServer creates a new server instance
@@ -334,7 +323,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 					// send shard to the corresponding lambda instance in group
 					newReq := ServerReq{Id{connId, reqId, chunkId}, cmd, key, val}
 					// send new request to lambda channel
-					group.Arr[lambdaId].C <- &newReq
+					group.Arr[lambdaId].C() <- &newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
 					//resp.MyPrint("KEY is", key.String(), "IN SET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 					//if err := nanolog.Log(resp.LogServer, key.String(), "SET", reqId, connId, chunkId, lambdaId); err != nil {
@@ -344,7 +333,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				} else {
 					// update the existed key
 					newServerReq := ServerReq{Id{connId, reqId, chunkId}, cmd, key, val}
-					group.Arr[lambdaDestination.(int64)].C <- &newServerReq
+					group.Arr[lambdaDestination.(int64)].C() <- &newServerReq
 					//resp.MyPrint("KEY is", key.String(), "IN SET UPDATE, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 					//if err := nanolog.Log(resp.LogServer, key.String(), "SET UPDATE", reqId, connId, chunkId, lambdaId); err != nil {
 					//	fmt.Println("LogServer err", err)
@@ -373,7 +362,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				}
 				newServerReq := ServerReq{Id{ConnId: connId, ReqId: reqId}, cmd, key, nil}
 				// send new request to lambda channel
-				group.Arr[lambdaDestination.(int64)].C <- &newServerReq
+				group.Arr[lambdaDestination.(int64)].C() <- &newServerReq
 			case "close":
 				return
 			}
