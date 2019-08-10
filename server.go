@@ -153,7 +153,6 @@ func (srv *Server) register(c *Client) {
 }
 
 func (srv *Server) deregister(clientID uint64) {
-	fmt.Println("before srv.info.deregister")
 	srv.info.deregister(clientID)
 	if srv.released != nil {
 		srv.released.Done()
