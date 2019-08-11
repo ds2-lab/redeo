@@ -64,7 +64,7 @@ type Response struct {
 }
 
 type Group struct {
-	Arr        []LambdaInstance
+	All        []LambdaInstance
 	MemCounter uint64
 }
 
@@ -238,7 +238,7 @@ func (srv *Server) perform(c *Client, name string) (err error) {
 
 // new serve with channel initial，creating a
 // new service goroutine for each.
-func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}, cMap hashmap.HashMap*/ cMap []chan interface{}, group Group, logger func(handle nanolog.Handle, args ...interface{}) error) error {
+func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}, cMap hashmap.HashMap*/ cMap []chan interface{}, group *Group, logger func(handle nanolog.Handle, args ...interface{}) error) error {
 	// start counter to record client id, initial with 0
 	connId := 0
 	for {
@@ -267,7 +267,7 @@ func (srv *Server) MyServe(lis net.Listener, /*cMap map[int]chan interface{}, cM
 }
 
 // client handler
-func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, connId int, group Group, logger func(handle nanolog.Handle, args ...interface{}) error) {
+func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, connId int, group *Group, logger func(handle nanolog.Handle, args ...interface{}) error) {
 	// make helper channel for every client
 
 	// Release client on exit
@@ -322,7 +322,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 					// send shard to the corresponding lambda instance in group
 					newReq := ServerReq{Id{connId, reqId, chunkId}, cmd, key, val}
 					// send new request to lambda channel
-					group.Arr[lambdaId].C() <- &newReq
+					group.All[lambdaId].C() <- &newReq
 					metaMap.Set(key.String()+strconv.FormatInt(chunkId, 10), lambdaId)
 					//resp.MyPrint("KEY is", key.String(), "IN SET, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 					//if err := nanolog.Log(resp.LogServer, key.String(), "SET", reqId, connId, chunkId, lambdaId); err != nil {
@@ -332,7 +332,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				} else {
 					// update the existed key
 					newServerReq := ServerReq{Id{connId, reqId, chunkId}, cmd, key, val}
-					group.Arr[lambdaDestination.(int64)].C() <- &newServerReq
+					group.All[lambdaDestination.(int64)].C() <- &newServerReq
 					//resp.MyPrint("KEY is", key.String(), "IN SET UPDATE, reqId is", reqId, "connId is", connId, "chunkId is", chunkId, "lambdaStore Id is", lambdaId)
 					//if err := nanolog.Log(resp.LogServer, key.String(), "SET UPDATE", reqId, connId, chunkId, lambdaId); err != nil {
 					//	fmt.Println("LogServer err", err)
@@ -361,7 +361,7 @@ func (srv *Server) MyServeClient(c *Client, clientChannel chan interface{}, conn
 				}
 				newServerReq := ServerReq{Id{ConnId: connId, ReqId: reqId}, cmd, key, nil}
 				// send new request to lambda channel
-				group.Arr[lambdaDestination.(int64)].C() <- &newServerReq
+				group.All[lambdaDestination.(int64)].C() <- &newServerReq
 			case "close":
 				return
 			}
@@ -451,15 +451,6 @@ func (srv *Server) myPerform(c *Client, name string) (err error) {
 /*
  * Lambda store part
  */
-
-// Accept conn
-func (srv *Server) Accept(lis net.Listener) net.Conn {
-	cn, err := lis.Accept()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return cn
-}
 
 // Lambda facing serve client
 func (srv *Server) Serve_client(cn net.Conn) {
