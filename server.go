@@ -160,7 +160,7 @@ func (srv *Server) deregister(clientID uint64) {
 }
 
 // Starts a new session, serving client
-func (srv *Server) serveClient(c *Client) {
+func (srv *Server) serveClient(c *Client) error {
 	// Release client on exit
 	defer c.release()
 
@@ -185,15 +185,16 @@ func (srv *Server) serveClient(c *Client) {
 
 			if !resp.IsProtocolError(err) {
 				_ = c.wr.Flush()
-				return
+				return err
 			}
 		}
 
 		// flush buffer, return on errors
 		if err := c.wr.Flush(); err != nil {
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 func (srv *Server) perform(c *Client, name string) (err error) {
@@ -453,7 +454,6 @@ func (srv *Server) myPerform(c *Client, name string) (err error) {
  */
 
 // Lambda facing serve client
-func (srv *Server) Serve_client(cn net.Conn) {
-	//fmt.Println("in the lambda server")
-	srv.serveClient(newClient(cn))
+func (srv *Server) ServeForeignClient(cn net.Conn) error {
+	return srv.serveClient(newClient(cn))
 }
