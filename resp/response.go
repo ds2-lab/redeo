@@ -83,7 +83,7 @@ type ResponseParser interface {
 	ReadBulk(p []byte) ([]byte, error)
 	// StreamBulk parses a bulk responses and returns a streaming reader object
 	// Returned responses must be closed.
-	StreamBulk() (io.ReadCloser, error)
+	StreamBulk() (AllReadCloser, error)
 	// ReadInt reads an int value
 	ReadInt() (int64, error)
 	// ReadArrayLen reads the array length

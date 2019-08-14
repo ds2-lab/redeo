@@ -5,6 +5,7 @@ package resp
 
 import (
 	"fmt"
+	"io"
 )
 
 // ResponseType represents the reply type
@@ -67,6 +68,13 @@ func (s *NullString) ScanResponse(t ResponseType, r ResponseReader) error {
 	return nil
 }
 
+type AllReadCloser interface {
+	io.Reader
+	io.Closer
+
+	ReadAll() ([]byte, error)
+}
+
 // --------------------------------------------------------------------
 
 type protoError string
@@ -102,6 +110,6 @@ var (
 )
 
 // MaxBufferSize is the max request/response buffer size
-const MaxBufferSize = 64 * 1024
+const MaxBufferSize = 4096
 
 func mkStdBuffer() []byte { return make([]byte, MaxBufferSize) }

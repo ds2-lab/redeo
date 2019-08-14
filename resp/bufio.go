@@ -140,7 +140,7 @@ func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	return p, nil
 }
 
-func (b *bufioR) StreamBulk() (io.ReadCloser, error) {
+func (b *bufioR) StreamBulk() (AllReadCloser, error) {
 	sz, err := b.ReadBulkLen()
 	if err != nil {
 		return nil, err
@@ -341,10 +341,21 @@ func (b *bulkReader) Read(p []byte) (n int, err error) {
 	}
 
 	b.n -= int64(n)
-	if pad := 2 - b.n; pad > 0 {
-		n -= int(pad)
-	}
+	// FIXED: This may leave \r\n or \n unread.
+	// if pad := 2 - b.n; pad > 0 {
+	// 	n -= int(pad)
+	// }
 	return
+}
+
+func (b *bulkReader) ReadAll() ([]byte, error) {
+	p := make([]byte, b.n)
+	n, err := io.ReadFull(b, p)
+	if b.n < 2 {
+		return p[0:n-2+int(b.n)], err
+	} else {
+		return p[0:n], err
+	}
 }
 
 // Close discards any unread data

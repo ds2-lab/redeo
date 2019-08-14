@@ -171,6 +171,34 @@ func readCommand(c interface {
 
 // --------------------------------------------------------------------
 
+// CommandStreamArgument is an argument of a command stream
+type CommandStreamArgument struct {
+	arg CommandArgument
+	err error
+}
+
+// Bytes returns the argument as bytes
+func (c* CommandStreamArgument) Bytes() ([]byte, error) { return c.arg, c.err }
+
+// String returns the argument converted to a string
+func (c* CommandStreamArgument) String() (string, error) { return string(c.arg), c.err }
+
+// Float returns the argument as a float64.
+func (c* CommandStreamArgument) Float() (float64, error) {
+	if c.err != nil {
+		return 0.0, c.err
+	}
+	return strconv.ParseFloat(string(c.arg), 64)
+}
+
+// Int returns the argument as an int64.
+func (c* CommandStreamArgument) Int() (int64, error) {
+	if c.err != nil {
+		return 0, c.err
+	}
+	return strconv.ParseInt(string(c.arg), 10, 64)
+}
+
 var errNoMoreArgs = errors.New("resp: no more arguments")
 
 // CommandStream instances are created by a RequestReader
@@ -185,7 +213,7 @@ type CommandStream struct {
 
 	nargs int
 	pos   int
-	arg   io.ReadCloser
+	arg   AllReadCloser
 
 	rd *bufioR
 }
@@ -237,7 +265,7 @@ func (c *CommandStream) More() bool {
 }
 
 // Next returns the next argument as an io.Reader
-func (c *CommandStream) Next() (io.Reader, error) {
+func (c *CommandStream) Next() (AllReadCloser, error) {
 	if c.ctx != nil {
 		if err := c.ctx.Err(); err != nil {
 			return nil, err
@@ -248,7 +276,7 @@ func (c *CommandStream) Next() (io.Reader, error) {
 	}
 
 	if c.isInline {
-		arg := bytes.NewReader(c.inline.Args[c.pos])
+		arg := newInlineReader(c.inline.Args[c.pos])
 		c.pos++
 		return arg, nil
 	}
@@ -257,6 +285,28 @@ func (c *CommandStream) Next() (io.Reader, error) {
 	c.arg, err = c.rd.StreamBulk()
 	c.pos++
 	return c.arg, err
+}
+
+func (c *CommandStream) NextArg() *CommandStreamArgument {
+	if c.ctx != nil {
+		if err := c.ctx.Err(); err != nil {
+			return &CommandStreamArgument{nil, err}
+		}
+	}
+	if !c.More() {
+		return &CommandStreamArgument{nil, errNoMoreArgs}
+	}
+
+	if c.isInline {
+		arg := c.inline.Args[c.pos]
+		c.pos++
+		return &CommandStreamArgument{ arg, nil }
+	}
+
+	var arg CommandArgument
+	arg, err := c.rd.ReadBulk(arg)
+	c.pos++
+	return &CommandStreamArgument{ arg, err }
 }
 
 // Context returns the context
@@ -290,3 +340,20 @@ func (c *CommandStream) readInline(r *bufioR) (bool, error) {
 	c.Name = c.inline.Name
 	return true, nil
 }
+
+type inlineReader struct {
+	io.Reader
+
+	buf []byte
+}
+
+func newInlineReader(b []byte) *inlineReader {
+	return &inlineReader{
+		Reader: bytes.NewReader(b),
+		buf: b,
+	}
+}
+
+func (r *inlineReader) ReadAll() ([]byte, error) { return r.buf, nil }
+
+func (r *inlineReader) Close() error { return nil }
