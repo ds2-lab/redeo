@@ -72,7 +72,7 @@ type AllReadCloser interface {
 	io.Reader
 	io.Closer
 
-	N() int64
+	Len() int64
 	ReadAll() ([]byte, error)
 }
 

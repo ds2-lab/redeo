@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"strings"
+	"fmt"
 
 	"github.com/bsm/redeo/resp"
 	. "github.com/onsi/ginkgo"
@@ -408,6 +409,7 @@ var _ = Describe("RequestWriter", func() {
 		// Expect(buf.Len()).To(Equal(80030))
 		Expect(w.Buffered()).To(Equal(0))
 		Expect(buf.Len()).To(Equal(80032))
+		fmt.Printf("%v", buf.Bytes()[80020:])
 		Expect(w.Flush()).To(Succeed())
 		Expect(buf.Len()).To(Equal(80032))
 	})

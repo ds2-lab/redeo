@@ -146,7 +146,7 @@ func (b *bufioR) StreamBulk() (AllReadCloser, error) {
 		return nil, err
 	}
 
-	return &bulkReader{bufioR: b, n: sz + 2}, nil
+	return newBulkReader(b, sz + 2), nil
 }
 
 func (b *bufioR) ReadBulkString() (string, error) {
@@ -321,7 +321,12 @@ func (b *bufioR) reset(buf []byte, rd io.Reader) {
 
 type bulkReader struct {
 	*bufioR
+	len int64
 	n int64
+}
+
+func newBulkReader(r *bufioR, n int64) *bulkReader {
+	return &bulkReader { r, n, n }
 }
 
 func (b *bulkReader) Read(p []byte) (n int, err error) {
@@ -347,13 +352,14 @@ func (b *bulkReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (b *bulkReader) N() int64 { return b.n }
+func (b *bulkReader) Len() int64 { return b.len }
 
 func (b *bulkReader) ReadAll() ([]byte, error) {
-	p := make([]byte, b.n)
+	p := make([]byte, b.len)
 	n, err := io.ReadFull(b, p)
-	if b.n < 2 {
-		return p[0:n-2+int(b.n)], err
+	// remove \r\n
+	if n >= 2 && n > len(p) - 2 {
+		return p[0:len(p) - 2], err
 	} else {
 		return p[0:n], err
 	}
