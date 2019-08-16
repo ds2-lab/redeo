@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bsm/redeo/resp"
+	"github.com/wangaoone/redeo/resp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
