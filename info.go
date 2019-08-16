@@ -4,6 +4,7 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"github.com/cornelk/hashmap"
 	mathrand "math/rand"
 	"os"
 	"sort"
@@ -99,7 +100,7 @@ type ServerInfo struct {
 	socket    string
 	pid       int
 
-	clients     clientStats
+	clients     *clientReadStats
 	connections *info.IntValue
 	commands    *info.IntValue
 }
@@ -111,7 +112,8 @@ func newServerInfo() *ServerInfo {
 		startTime:   time.Now(),
 		connections: info.NewIntValue(0),
 		commands:    info.NewIntValue(0),
-		clients:     clientStats{stats: make(map[uint64]*ClientInfo)},
+		// clients:     clientStats{stats: make(map[uint64]*ClientInfo)},
+		clients:     &clientReadStats{ stats: &hashmap.HashMap{} },
 	}
 	info.initDefaults()
 	return info
@@ -218,6 +220,14 @@ func (s *clientStats) Del(clientID uint64) {
 	s.mu.Unlock()
 }
 
+func (s *clientStats) Client(clientID uint64) (*ClientInfo, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	info, exist := s.stats[clientID]
+	return info, exist
+}
+
 func (s *clientStats) Len() int {
 	s.mu.RLock()
 	n := len(s.stats)
@@ -232,6 +242,44 @@ func (s *clientStats) All() []ClientInfo {
 	res := make(clientInfoSlice, 0, len(s.stats))
 	for _, info := range s.stats {
 		res = append(res, *info)
+	}
+	sort.Sort(res)
+	return res
+}
+
+// Client stats optimized for read operation
+type clientReadStats struct {
+	stats *hashmap.HashMap
+}
+
+func (s *clientReadStats) Add(c *Client) {
+	s.stats.Set(c.id, newClientInfo(c, time.Now()))
+}
+
+func (s *clientReadStats) Cmd(clientID uint64, cmd string) {
+	if info, ok := s.stats.Get(clientID); ok {
+		info.(*ClientInfo).AccessTime = time.Now()
+		info.(*ClientInfo).LastCmd = cmd
+	}
+}
+
+func (s *clientReadStats) Del(clientID uint64) {
+	s.stats.Del(clientID)
+}
+
+func (s *clientReadStats) Client(clientID uint64) (*ClientInfo, bool) {
+	info, exist := s.stats.Get(clientID)
+	return info.(*ClientInfo), exist
+}
+
+func (s *clientReadStats) Len() int {
+	return s.stats.Len()
+}
+
+func (s *clientReadStats) All() []ClientInfo {
+	res := make(clientInfoSlice, 0, s.stats.Len())
+	for keyVal := range s.stats.Iter() {
+		res = append(res, *keyVal.Value.(*ClientInfo))
 	}
 	sort.Sort(res)
 	return res

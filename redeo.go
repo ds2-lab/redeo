@@ -164,3 +164,17 @@ type StreamHandlerFunc func(w resp.ResponseWriter, c *resp.CommandStream)
 
 // ServeRedeoStream calls f(w, c).
 func (f StreamHandlerFunc) ServeRedeoStream(w resp.ResponseWriter, c *resp.CommandStream) { f(w, c) }
+
+// --------------------------------------------------------------------
+
+// StreamHandler is an  interface for responding to streaming commands
+type Callback interface {
+	// ServeRedeoStream serves a streaming request.
+	ServeCallback(w resp.ResponseWriter, r interface{})
+}
+
+// StreamHandlerFunc is a callback function, implementing Handler.
+type CallbackFunc func(w resp.ResponseWriter, r interface{})
+
+// ServeRedeoStream calls f(w, c).
+func (f CallbackFunc) ServeCallback(w resp.ResponseWriter, r interface{}) { f(w, r) }

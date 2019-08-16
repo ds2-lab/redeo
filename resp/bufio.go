@@ -341,12 +341,13 @@ func (b *bulkReader) Read(p []byte) (n int, err error) {
 	}
 
 	b.n -= int64(n)
-	// FIXED: This may leave \r\n or \n unread.
-	// if pad := 2 - b.n; pad > 0 {
-	// 	n -= int(pad)
-	// }
+	if pad := 2 - b.n; pad > 0 {
+		n -= int(pad)
+	}
 	return
 }
+
+func (b *bulkReader) N() int64 { return b.n }
 
 func (b *bulkReader) ReadAll() ([]byte, error) {
 	p := make([]byte, b.n)
@@ -618,7 +619,13 @@ func (b *bufioW) CopyBulk(src io.Reader, n int64) error {
 		return err
 	}
 
-	b.buf = append(b.buf, binCRLF...)
+	// FIXED: Instead of append CRLF to buf, we flush it directly.
+	// b.buf = append(b.buf, binCRLF...)
+	_, err = b.Write(binCRLF)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -627,17 +634,6 @@ func (b *bufioW) Flush() error {
 	b.mu.Lock()
 	err := b.flush()
 	b.mu.Unlock()
-	return err
-}
-
-// Flush flushes pending buffer
-func (b *bufioW) MyFlush() error {
-	//t := time.Now()
-	b.mu.Lock()
-	//temp := len(b.buf)
-	err := b.flush()
-	b.mu.Unlock()
-	//fmt.Println("myFlush function time is ", time.Since(t), "buffer len is ", temp)
 	return err
 }
 

@@ -354,6 +354,8 @@ func newInlineReader(b []byte) *inlineReader {
 	}
 }
 
+func (r *inlineReader) N() int64 { return int64(len(r.buf)) }
+
 func (r *inlineReader) ReadAll() ([]byte, error) { return r.buf, nil }
 
 func (r *inlineReader) Close() error { return nil }

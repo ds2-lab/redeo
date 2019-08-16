@@ -404,8 +404,10 @@ var _ = Describe("RequestWriter", func() {
 		Expect(buf.Len()).To(Equal(0))
 
 		Expect(w.CopyBulk(src, 80000)).To(Succeed())
-		Expect(w.Buffered()).To(Equal(2))
-		Expect(buf.Len()).To(Equal(80030))
+		// Expect(w.Buffered()).To(Equal(2))
+		// Expect(buf.Len()).To(Equal(80030))
+		Expect(w.Buffered()).To(Equal(0))
+		Expect(buf.Len()).To(Equal(80032))
 		Expect(w.Flush()).To(Succeed())
 		Expect(buf.Len()).To(Equal(80032))
 	})

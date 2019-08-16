@@ -72,6 +72,7 @@ type AllReadCloser interface {
 	io.Reader
 	io.Closer
 
+	N() int64
 	ReadAll() ([]byte, error)
 }
 
@@ -110,6 +111,6 @@ var (
 )
 
 // MaxBufferSize is the max request/response buffer size
-const MaxBufferSize = 4096
+const MaxBufferSize = 64 * 1024
 
 func mkStdBuffer() []byte { return make([]byte, MaxBufferSize) }

@@ -28,9 +28,12 @@ type Client struct {
 
 	ctx    context.Context
 	closed bool
+	done   chan struct{}
 
 	cmd  *resp.Command
 	scmd *resp.CommandStream
+
+	responses chan interface{}
 }
 
 func newClient(cn net.Conn) *Client {
@@ -69,6 +72,10 @@ func (c *Client) SetContext(ctx context.Context) {
 // RemoteAddr return the remote client address
 func (c *Client) RemoteAddr() net.Addr {
 	return c.cn.RemoteAddr()
+}
+
+func (c *Client) Responses() chan interface{} {
+	return c.responses
 }
 
 // Close will disconnect as soon as all pending replies have been written
@@ -140,6 +147,14 @@ func (c *Client) peekCmd(fn func(string) error, channel chan string) error {
 }
 
 func (c *Client) release() {
+	select {
+	case <-c.done:
+		// closed
+		return
+	default:
+	}
+
+	close(c.done)
 	_ = c.cn.Close()
 	readerPool.Put(c.rd)
 	writerPool.Put(c.wr)
@@ -166,4 +181,7 @@ func (c *Client) reset(cn net.Conn) {
 	} else {
 		c.wr = resp.NewResponseWriter(cn)
 	}
+
+	c.done = make(chan struct{})
+	c.responses = make(chan interface{}, 1)
 }
