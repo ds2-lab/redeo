@@ -76,6 +76,11 @@ type AllReadCloser interface {
 	ReadAll() ([]byte, error)
 }
 
+type Holdable interface {
+	Hold()
+	Unhold()
+}
+
 // --------------------------------------------------------------------
 
 type protoError string

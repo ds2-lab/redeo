@@ -323,10 +323,11 @@ type bulkReader struct {
 	*bufioR
 	len int64
 	n int64
+	wait chan struct{}
 }
 
 func newBulkReader(r *bufioR, n int64) *bulkReader {
-	return &bulkReader { r, n, n }
+	return &bulkReader { bufioR: r, len: n, n: n }
 }
 
 func (b *bulkReader) Read(p []byte) (n int, err error) {
@@ -365,8 +366,20 @@ func (b *bulkReader) ReadAll() ([]byte, error) {
 	}
 }
 
+func (b *bulkReader) Hold() {
+	b.wait = make(chan struct{})
+}
+
+func (b *bulkReader) Unhold() {
+	close(b.wait)
+}
+
 // Close discards any unread data
 func (b *bulkReader) Close() error {
+	if b.wait != nil {
+		<-b.wait
+	}
+
 	if b.n <= 0 {
 		return nil
 	}
