@@ -83,6 +83,8 @@ type ResponseParser interface {
 	// StreamBulk parses a bulk responses and returns a streaming reader object
 	// Returned responses must be closed.
 	StreamBulk() (AllReadCloser, error)
+	// SkipBulk skip a bulk
+	SkipBulk() error
 	// ReadInt reads an int value
 	ReadInt() (int64, error)
 	// ReadArrayLen reads the array length
