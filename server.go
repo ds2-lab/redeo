@@ -175,8 +175,10 @@ func (srv *Server) handleRequests(c *Client) error {
 			c.wr.AppendError("ERR " + err.Error())
 
 			if !resp.IsProtocolError(err) {
-				_ = c.wr.Flush()
-				return err
+				err := c.wr.Flush()
+				if err != nil {
+					return err
+				}
 			}
 		}
 
