@@ -103,11 +103,7 @@ func (srv *Server) serveImpl(lis net.Listener, sync bool) error {
 }
 
 func (srv *Server) GetClient(id uint64) (*Client, bool) {
-	if cInfo, ok := srv.info.clients.Client(id); ok {
-		return cInfo.Client, ok
-	} else {
-		return nil, ok
-	}
+	return srv.info.Client(id)
 }
 
 func (srv *Server) Close(lis net.Listener) {
@@ -115,12 +111,13 @@ func (srv *Server) Close(lis net.Listener) {
 }
 
 func (srv *Server) Release() {
-	infos := srv.info.clients.All()
+	srv.mu.Lock()
 	srv.released = &sync.WaitGroup{}
-	for i := 0; i < len(infos); i++ {
+	srv.mu.Unlock()
+
+	for _, client := range srv.info.Clients() {
 		srv.released.Add(1)
-		infos[i].Client.Close()
-		infos[i].Client = nil
+		client.Close()
 	}
 	srv.released.Wait()
 	srv.released = nil
@@ -132,9 +129,14 @@ func (srv *Server) register(c *Client) {
 
 func (srv *Server) deregister(clientID uint64) {
 	srv.info.deregister(clientID)
-	if srv.released != nil {
-		srv.released.Done()
-	}
+	go func() {
+		srv.mu.Lock()
+		defer srv.mu.Unlock()
+
+		if srv.released != nil {
+			srv.released.Done()
+		}
+	}()
 }
 
 // Starts a new session, serving client

@@ -48,7 +48,7 @@ type CommandDescription struct {
 
 // ClientInfo contains client stats
 type ClientInfo struct {
-	Client  *Client
+	client  *Client
 
 	// ID is the internal client ID
 	ID uint64
@@ -69,7 +69,7 @@ type ClientInfo struct {
 
 func newClientInfo(c *Client, now time.Time) *ClientInfo {
 	return &ClientInfo{
-		Client:     c,
+		client:     c,
 		ID:         c.id,
 		RemoteAddr: c.RemoteAddr().String(),
 		CreateTime: now,
@@ -134,7 +134,13 @@ func (i *ServerInfo) String() string { return i.registry.String() }
 func (i *ServerInfo) NumClients() int { return i.clients.Len() }
 
 // ClientInfo returns details about connected clients
-func (i *ServerInfo) ClientInfo() []ClientInfo { return i.clients.All() }
+func (i *ServerInfo) ClientInfo() []*ClientInfo { return i.clients.Stats() }
+
+// Clients returns all connected clients
+func (i *ServerInfo) Clients() []*Client { return i.clients.All() }
+
+// Client returns connected clients by id
+func (i *ServerInfo) Client(clientID uint64) (*Client, bool) { return i.clients.Client(clientID) }
 
 // TotalConnections returns the total number of connections made since the
 // start of the server.
@@ -214,18 +220,22 @@ func (s *clientStats) Del(clientID uint64) {
 	s.mu.Lock()
 	// Release client reference
 	if info, exist := s.stats[clientID]; exist {
-		info.Client = nil
+		info.client = nil
 		delete(s.stats, clientID)
 	}
 	s.mu.Unlock()
 }
 
-func (s *clientStats) Client(clientID uint64) (*ClientInfo, bool) {
+func (s *clientStats) Client(clientID uint64) (*Client, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	info, exist := s.stats[clientID]
-	return info, exist
+	if exist {
+		return info.client, exist
+	} else {
+		return nil, exist
+	}
 }
 
 func (s *clientStats) Len() int {
@@ -235,17 +245,31 @@ func (s *clientStats) Len() int {
 	return n
 }
 
-func (s *clientStats) All() []ClientInfo {
+func (s *clientStats) Stats() []*ClientInfo {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	res := make(clientInfoSlice, 0, len(s.stats))
 	for _, info := range s.stats {
-		res = append(res, *info)
+		i := *info
+		i.client = nil
+		res = append(res, &i)
 	}
 	sort.Sort(res)
 	return res
 }
+
+func (s *clientStats) All() []*Client {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	res := make([]*Client, 0, len(s.stats))
+	for _, info := range s.stats {
+		res = append(res, info.client)
+	}
+	return res
+}
+
 
 // Client stats optimized for read operation
 type clientReadStats struct {
@@ -267,25 +291,41 @@ func (s *clientReadStats) Del(clientID uint64) {
 	s.stats.Del(clientID)
 }
 
-func (s *clientReadStats) Client(clientID uint64) (*ClientInfo, bool) {
+func (s *clientReadStats) Client(clientID uint64) (*Client, bool) {
 	info, exist := s.stats.Get(clientID)
-	return info.(*ClientInfo), exist
+	if exist {
+		return info.(*ClientInfo).client, exist
+	} else {
+		return nil, false
+	}
 }
 
 func (s *clientReadStats) Len() int {
 	return s.stats.Len()
 }
 
-func (s *clientReadStats) All() []ClientInfo {
-	res := make(clientInfoSlice, 0, s.stats.Len())
-	for keyVal := range s.stats.Iter() {
-		res = append(res, *keyVal.Value.(*ClientInfo))
+func (s *clientReadStats) Stats() []*ClientInfo {
+	iter := s.stats.Iter()
+	res := make(clientInfoSlice, 0, len(iter))
+	for keyVal := range iter {
+		info := *keyVal.Value.(*ClientInfo)
+		info.client = nil
+		res = append(res, &info)
 	}
 	sort.Sort(res)
 	return res
 }
 
-type clientInfoSlice []ClientInfo
+func (s *clientReadStats) All() []*Client {
+	iter := s.stats.Iter()
+	res := make([]*Client, 0, len(iter))
+	for keyVal := range iter {
+		res = append(res, keyVal.Value.(*ClientInfo).client)
+	}
+	return res
+}
+
+type clientInfoSlice []*ClientInfo
 
 func (p clientInfoSlice) Len() int           { return len(p) }
 func (p clientInfoSlice) Less(i, j int) bool { return p[i].ID < p[j].ID }
