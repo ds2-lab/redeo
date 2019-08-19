@@ -2,6 +2,7 @@ package redeo
 
 import (
 	"github.com/wangaoone/redeo/resp"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -168,6 +169,9 @@ func (srv *Server) handleRequests(c *Client) error {
 
 		// perform pipeline
 		if err := c.pipeline(perform); err != nil {
+			if err == io.EOF {
+				return err
+			}
 			c.wr.AppendError("ERR " + err.Error())
 
 			if !resp.IsProtocolError(err) {

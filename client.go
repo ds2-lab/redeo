@@ -117,35 +117,6 @@ func (c *Client) pipeline(fn func(string) error) error {
 	return nil
 }
 
-// modified client peek cmd with helper channel
-func (c *Client) peekCmd(fn func(string) error, channel chan string) error {
-	for more := true; more; more = c.rd.Buffered() != 0 {
-		//fmt.Println("peeking cmd name...")
-		cmdName, err := c.rd.PeekCmd()
-		if err != nil {
-			if err == io.EOF {
-				channel <- "close"
-				return err
-			}
-			_ = c.rd.SkipCmd()
-			fmt.Println("SkipCmd err", err)
-			//channel <- "close"
-			//return err
-			continue
-
-		}
-		if err := fn(cmdName); err != nil {
-			fmt.Println("fn(cmdName) err", err)
-			//channel <- "err"
-			//return err
-			continue
-		}
-		// send the cmd name to the helper channel
-		channel <- cmdName
-	}
-	return nil
-}
-
 func (c *Client) release() {
 	select {
 	case <-c.done:
