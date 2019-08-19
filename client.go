@@ -2,7 +2,6 @@ package redeo
 
 import (
 	"context"
-	"fmt"
 	"github.com/wangaoone/redeo/resp"
 	"io"
 	"net"
