@@ -119,6 +119,7 @@ func (srv *Server) Release() {
 	for _, client := range srv.info.Clients() {
 		srv.released.Add(1)
 		client.Close()
+		client.release()
 	}
 	srv.released.Wait()
 	srv.released = nil
