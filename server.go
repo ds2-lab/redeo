@@ -20,7 +20,7 @@ type Server struct {
 
 	cmds     map[string]interface{}
 	mu       sync.RWMutex
-	released *sync.WaitGroup
+//	released *sync.WaitGroup
 }
 
 // NewServer creates a new server instance
@@ -112,17 +112,16 @@ func (srv *Server) Close(lis net.Listener) {
 }
 
 func (srv *Server) Release() {
-	srv.mu.Lock()
-	srv.released = &sync.WaitGroup{}
-	srv.mu.Unlock()
+	// srv.mu.Lock()
+	// srv.released = &sync.WaitGroup{}
+	// srv.mu.Unlock()
 
 	for _, client := range srv.info.Clients() {
-		srv.released.Add(1)
+		// srv.released.Add(1)
 		client.Close()
-		client.release()
 	}
-	srv.released.Wait()
-	srv.released = nil
+	// srv.released.Wait()
+	// srv.released = nil
 }
 
 func (srv *Server) register(c *Client) {
@@ -131,14 +130,14 @@ func (srv *Server) register(c *Client) {
 
 func (srv *Server) deregister(clientID uint64) {
 	srv.info.deregister(clientID)
-	go func() {
-		srv.mu.Lock()
-		defer srv.mu.Unlock()
-
-		if srv.released != nil {
-			srv.released.Done()
-		}
-	}()
+	// go func() {
+	// 	srv.mu.Lock()
+	// 	defer srv.mu.Unlock()
+	//
+	// 	if srv.released != nil {
+	// 		srv.released.Done()
+	// 	}
+	// }()
 }
 
 // Starts a new session, serving client
