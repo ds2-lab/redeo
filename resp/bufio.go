@@ -355,6 +355,11 @@ func (b *bulkReader) Read(p []byte) (n int, err error) {
 			b.n = 0
 		}
 	}
+
+	// Auto unhold
+	if b.n == 0 {
+		b.Unhold()
+	}
 	return
 }
 
@@ -363,6 +368,7 @@ func (b *bulkReader) Len() int64 { return b.len }
 func (b *bulkReader) ReadAll() ([]byte, error) {
 	p := make([]byte, b.len)
 	n, err := io.ReadFull(b, p)
+	b.Unhold()
 	return p[0:n], err
 }
 
@@ -371,6 +377,15 @@ func (b *bulkReader) Hold() {
 }
 
 func (b *bulkReader) Unhold() {
+	if b.wait == nil {
+		return
+	}
+
+	select {
+	case <-b.wait:
+	default:
+	}
+
 	close(b.wait)
 }
 

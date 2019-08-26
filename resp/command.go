@@ -276,7 +276,7 @@ func (c *CommandStream) Next() (AllReadCloser, error) {
 	}
 
 	if c.isInline {
-		arg := newInlineReader(c.inline.Args[c.pos])
+		arg := NewInlineReader(c.inline.Args[c.pos])
 		c.pos++
 		return arg, nil
 	}
@@ -341,21 +341,21 @@ func (c *CommandStream) readInline(r *bufioR) (bool, error) {
 	return true, nil
 }
 
-type inlineReader struct {
+type InlineReader struct {
 	io.Reader
 
 	buf []byte
 }
 
-func newInlineReader(b []byte) *inlineReader {
-	return &inlineReader{
+func NewInlineReader(b []byte) *InlineReader {
+	return &InlineReader{
 		Reader: bytes.NewReader(b),
 		buf: b,
 	}
 }
 
-func (r *inlineReader) Len() int64 { return int64(len(r.buf)) }
+func (r *InlineReader) Len() int64 { return int64(len(r.buf)) }
 
-func (r *inlineReader) ReadAll() ([]byte, error) { return r.buf, nil }
+func (r *InlineReader) ReadAll() ([]byte, error) { return r.buf, nil }
 
-func (r *inlineReader) Close() error { return nil }
+func (r *InlineReader) Close() error { return nil }
