@@ -190,29 +190,25 @@ func (srv *Server) handleRequests(c *Client) error {
 	return nil
 }
 
-func (srv *Server) handleResponses(c *Client) (err error) {
-	for {
-		select {
-		case <-c.done:
-			return nil
-		case response := <-c.responses:
-			// find handler
-			srv.mu.RLock()
-			cb, ok := srv.cmds[ASYNC_CB_NAME]
-			srv.mu.RUnlock()
+func (srv *Server) handleResponses(c *Client) {
+	// All response should be handled.
+	for response := range c.responses {
+		// find handler
+		srv.mu.RLock()
+		cb, ok := srv.cmds[ASYNC_CB_NAME]
+		srv.mu.RUnlock()
 
-			if !ok {
-				c.wr.AppendError(UnknownCommand(ASYNC_CB_NAME))
-				err = c.wr.Flush()
-			}
-
-			cb.(Callback).ServeCallback(c.wr, response)
-
-			// flush buffer, return on errors
-			if err := c.wr.Flush(); err != nil {
-				return err
-			}
+		if !ok {
+			c.wr.AppendError(UnknownCommand(ASYNC_CB_NAME))
+			// Nothing can be done on error
+			c.wr.Flush()
+			continue
 		}
+
+		cb.(Callback).ServeCallback(c.wr, response)
+
+		// Nothing can be done on error
+		c.wr.Flush()
 	}
 }
 

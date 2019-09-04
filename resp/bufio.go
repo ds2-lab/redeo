@@ -332,6 +332,7 @@ func newBulkReader(r *bufioR, n int64) *bulkReader {
 
 func (b *bulkReader) Read(p []byte) (n int, err error) {
 	if b.n <= 0 {
+		b.Unhold()
 		return 0, io.EOF
 	}
 
@@ -357,7 +358,7 @@ func (b *bulkReader) Read(p []byte) (n int, err error) {
 	}
 
 	// Auto unhold
-	if b.n == 0 {
+	if b.n == 0 || err != nil {
 		b.Unhold()
 	}
 	return
