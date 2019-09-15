@@ -384,6 +384,7 @@ func (b *bulkReader) Unhold() {
 
 	select {
 	case <-b.wait:
+		return
 	default:
 	}
 
