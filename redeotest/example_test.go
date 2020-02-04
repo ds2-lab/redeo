@@ -3,9 +3,9 @@ package redeotest_test
 import (
 	"fmt"
 
-	"github.com/bsm/redeo"
-	"github.com/bsm/redeo/redeotest"
-	"github.com/bsm/redeo/resp"
+	"github.com/mason-leap-lab/redeo"
+	"github.com/mason-leap-lab/redeo/redeotest"
+	"github.com/mason-leap-lab/redeo/resp"
 )
 
 func ExampleResponseRecorder() {

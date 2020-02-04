@@ -6,7 +6,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/bsm/redeo/resp"
+	"github.com/mason-leap-lab/redeo/resp"
 )
 
 // ErrorResponse is used to wrap error strings

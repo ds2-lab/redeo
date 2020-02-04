@@ -11,7 +11,7 @@ import (
   "fmt"
   "strings"
 
-  "github.com/bsm/redeo/client"
+  "github.com/mason-leap-lab/redeo/client"
 )
 
 func main() {

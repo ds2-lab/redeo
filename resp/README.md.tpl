@@ -13,7 +13,7 @@ import (
   "fmt"
   "strings"
 
-  "github.com/bsm/redeo/resp"
+  "github.com/mason-leap-lab/redeo/resp"
 )
 
 func main() {{ "ExampleRequestReader" | code }}
@@ -28,7 +28,7 @@ import (
   "bytes"
   "fmt"
 
-  "github.com/bsm/redeo/resp"
+  "github.com/mason-leap-lab/redeo/resp"
 )
 
 func main() {{ "ExampleResponseWriter" | code }}
@@ -45,7 +45,7 @@ import (
   "fmt"
   "net"
 
-  "github.com/bsm/redeo/resp"
+  "github.com/mason-leap-lab/redeo/resp"
 )
 
 func main() {{ "Example_client" | code }}
