@@ -1,7 +1,8 @@
-module github.com/bsm/redeo
+module github.com/mason-leap-lab/redeo
 
 require (
 	github.com/bsm/pool v0.8.1
+	github.com/cornelk/hashmap v1.0.1
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.3
 	golang.org/x/net v0.0.0-20181129055619-fae4c4e3ad76 // indirect

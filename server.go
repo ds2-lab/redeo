@@ -1,7 +1,7 @@
 package redeo
 
 import (
-	"github.com/wangaoone/redeo/resp"
+	"github.com/mason-leap-lab/redeo/resp"
 	"io"
 	"net"
 	"strings"

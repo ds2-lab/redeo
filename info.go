@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wangaoone/redeo/info"
+	"github.com/mason-leap-lab/redeo/info"
 )
 
 // CommandDescription describes supported commands

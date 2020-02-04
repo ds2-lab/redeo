@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/wangaoone/redeo/resp"
+	"github.com/mason-leap-lab/redeo/resp"
 )
 
 // Conn wraps a single network connection and exposes

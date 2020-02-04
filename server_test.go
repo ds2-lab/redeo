@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wangaoone/redeo/resp"
+	"github.com/mason-leap-lab/redeo/resp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

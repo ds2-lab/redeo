@@ -2,7 +2,7 @@ package redeo
 
 import (
 	"context"
-	"github.com/wangaoone/redeo/resp"
+	"github.com/mason-leap-lab/redeo/resp"
 	"io"
 	"net"
 	"sync"
