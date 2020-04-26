@@ -77,6 +77,10 @@ func (c *Client) RemoteAddr() net.Addr {
 	return c.cn.RemoteAddr()
 }
 
+func (c *Client) Responses() chan interface{} {
+	return c.responses
+}
+
 func (c *Client) AddResponses(rsp interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
