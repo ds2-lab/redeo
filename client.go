@@ -2,6 +2,7 @@ package redeo
 
 import (
 	"context"
+	"errors"
 	"github.com/mason-leap-lab/redeo/resp"
 	"io"
 	"net"
@@ -13,6 +14,8 @@ var (
 	clientInc  = uint64(0)
 	readerPool sync.Pool
 	writerPool sync.Pool
+
+	ERR_CLIENT_CLOSED = errors.New("Client closed.")
 )
 
 type ctxKeyClient struct{}
@@ -32,6 +35,7 @@ type Client struct {
 	cmd  *resp.Command
 	scmd *resp.CommandStream
 
+	mu   sync.Mutex
 	responses chan interface{}
 }
 
@@ -73,14 +77,24 @@ func (c *Client) RemoteAddr() net.Addr {
 	return c.cn.RemoteAddr()
 }
 
-func (c *Client) Responses() chan interface{} {
-	return c.responses
+func (c *Client) AddResponses(rsp interface{}) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.closed {
+		return ERR_CLIENT_CLOSED
+	}
+
+	c.responses <- rsp
+	return nil
 }
 
 // Close will disconnect as soon as all pending replies have been written
 // to the client
 func (c *Client) Close() {
+	c.mu.Lock()
 	c.closed = true
+	c.mu.Unlock()
 }
 
 func (c *Client) readCmd(cmd *resp.Command) (*resp.Command, error) {

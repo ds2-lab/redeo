@@ -152,7 +152,11 @@ func (srv *Server) serveClient(c *Client, sync bool) error {
 	if !sync {
 		go srv.handleResponses(c)
 	}
-	return srv.handleRequests(c)
+	if err := srv.handleRequests(c); err != nil {
+		c.Close()
+		return err
+	}
+	return nil
 }
 
 func (srv *Server) handleRequests(c *Client) error {
@@ -209,6 +213,13 @@ func (srv *Server) handleResponses(c *Client) {
 
 		// Nothing can be done on error
 		c.wr.Flush()
+
+		c.mu.Lock()
+		stop := len(c.responses) == 0 && c.closed
+		c.mu.Unlock()
+		if stop {
+			return
+		}
 	}
 }
 
