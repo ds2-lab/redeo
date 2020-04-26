@@ -77,10 +77,12 @@ func (c *Client) RemoteAddr() net.Addr {
 	return c.cn.RemoteAddr()
 }
 
+// Obsoleted. Don't use responses channel directly, use AddResponses instead.
 func (c *Client) Responses() chan interface{} {
 	return c.responses
 }
 
+// Add asynchronize response, error if the client is closed.
 func (c *Client) AddResponses(rsp interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
