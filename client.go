@@ -103,6 +103,11 @@ func (c *Client) Close() {
 	c.mu.Unlock()
 }
 
+func (c *Client) WaitClose() {
+	<-c.done
+}
+
+
 func (c *Client) readCmd(cmd *resp.Command) (*resp.Command, error) {
 	var err error
 	if cmd, err = c.rd.ReadCmd(cmd); err == nil {
