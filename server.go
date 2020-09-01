@@ -1,12 +1,13 @@
 package redeo
 
 import (
-	"github.com/mason-leap-lab/redeo/resp"
 	"io"
 	"net"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mason-leap-lab/redeo/resp"
 )
 
 const (
@@ -18,9 +19,9 @@ type Server struct {
 	config *Config
 	info   *ServerInfo
 
-	cmds     map[string]interface{}
-	mu       sync.RWMutex
-//	released *sync.WaitGroup
+	cmds map[string]interface{}
+	mu   sync.RWMutex
+	//	released *sync.WaitGroup
 }
 
 // NewServer creates a new server instance
@@ -275,4 +276,14 @@ func (srv *Server) ServeForeignClient(cn net.Conn, syncs ...bool) error {
 		sync = syncs[0]
 	}
 	return srv.serveClient(newClient(cn), sync)
+}
+
+// Lambda facing serve client
+func (srv *Server) ServeForeignConnection(cn net.Conn, syncs ...bool) (*Client, error) {
+	sync := true
+	if len(syncs) > 0 {
+		sync = syncs[0]
+	}
+	cli := newClient(cn)
+	return cli, srv.serveClient(cli, sync)
 }
