@@ -162,10 +162,8 @@ func (c *Client) release() {
 }
 
 func (c *Client) reset(cn net.Conn) {
-	*c = Client{
-		id: atomic.AddUint64(&clientInc, 1),
-		cn: cn,
-	}
+	c.id = atomic.AddUint64(&clientInc, 1)
+	c.cn = cn
 
 	if v := readerPool.Get(); v != nil {
 		rd := v.(*resp.RequestReader)
