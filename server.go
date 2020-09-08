@@ -279,11 +279,11 @@ func (srv *Server) ServeForeignClient(cn net.Conn, syncs ...bool) error {
 }
 
 // Lambda facing serve client
-func (srv *Server) ServeForeignConnection(cn net.Conn, syncs ...bool) (*Client, error) {
+func (srv *Server) ServeClient(cli *Client, syncs ...bool) error {
 	sync := true
 	if len(syncs) > 0 {
 		sync = syncs[0]
 	}
-	cli := newClient(cn)
-	return cli, srv.serveClient(cli, sync)
+	cli.reset(cli.cn)
+	return srv.serveClient(cli, sync)
 }

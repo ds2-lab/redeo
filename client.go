@@ -3,11 +3,12 @@ package redeo
 import (
 	"context"
 	"errors"
-	"github.com/mason-leap-lab/redeo/resp"
 	"io"
 	"net"
 	"sync"
 	"sync/atomic"
+
+	"github.com/mason-leap-lab/redeo/resp"
 )
 
 var (
@@ -35,7 +36,7 @@ type Client struct {
 	cmd  *resp.Command
 	scmd *resp.CommandStream
 
-	mu   sync.Mutex
+	mu        sync.Mutex
 	responses chan interface{}
 }
 
@@ -43,6 +44,12 @@ func newClient(cn net.Conn) *Client {
 	c := new(Client)
 	c.reset(cn)
 	return c
+}
+
+func NewClient(cn net.Conn) *Client {
+	return &Client{
+		cn: cn,
+	}
 }
 
 // GetClient retrieves the client from a the context.
@@ -106,7 +113,6 @@ func (c *Client) Close() {
 func (c *Client) WaitClose() {
 	<-c.done
 }
-
 
 func (c *Client) readCmd(cmd *resp.Command) (*resp.Command, error) {
 	var err error
