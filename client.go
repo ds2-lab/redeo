@@ -41,14 +41,15 @@ type Client struct {
 }
 
 func newClient(cn net.Conn) *Client {
-	c := new(Client)
+	c := NewClient(cn)
 	c.reset(cn)
 	return c
 }
 
 func NewClient(cn net.Conn) *Client {
 	return &Client{
-		cn: cn,
+		cn:        cn,
+		responses: make(chan interface{}, 1),
 	}
 }
 
@@ -182,5 +183,4 @@ func (c *Client) reset(cn net.Conn) {
 	}
 
 	c.done = make(chan struct{})
-	c.responses = make(chan interface{}, 1)
 }
