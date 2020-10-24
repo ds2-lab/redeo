@@ -67,6 +67,9 @@ func GetClient(ctx context.Context) *Client {
 // ID return the unique client id
 func (c *Client) ID() uint64 { return c.id }
 
+// Conn return backend connection
+func (c *Client) Conn() net.Conn { return c.cn }
+
 // Context return the client context
 func (c *Client) Context() context.Context {
 	if c.ctx != nil {
@@ -96,6 +99,7 @@ func (c *Client) AddResponses(rsp interface{}) error {
 	defer c.mu.Unlock()
 
 	if c.closed {
+		close(c.responses)
 		return ERR_CLIENT_CLOSED
 	}
 

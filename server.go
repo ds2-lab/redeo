@@ -1,6 +1,7 @@
 package redeo
 
 import (
+	"context"
 	"io"
 	"net"
 	"strings"
@@ -142,22 +143,42 @@ func (srv *Server) deregister(clientID uint64) {
 }
 
 // Starts a new session, serving client
-func (srv *Server) serveClient(c *Client, sync bool) error {
-	// Release client on exit
-	defer c.release()
-
+func (srv *Server) serveClient(c *Client, synch bool) error {
 	// Register client
 	srv.register(c)
 	defer srv.deregister(c.id)
 
-	if !sync {
-		go srv.handleResponses(c)
+	var done sync.WaitGroup
+	chanErr := make(chan error, 2)
+
+	if synch {
+		done.Add(1)
+	} else {
+		done.Add(2)
+		go func(chanErr chan error) {
+			if err := srv.handleResponses(c); err != nil {
+				c.Close()
+				chanErr <- err
+			}
+			done.Done()
+		}(chanErr)
 	}
-	if err := srv.handleRequests(c); err != nil {
-		c.Close()
-		return err
-	}
-	return nil
+
+	go func(chanErr chan error) {
+		if err := srv.handleRequests(c); err != nil {
+			c.Close()
+			chanErr <- err
+			done.Done()
+
+			// Wait all done and release client
+			done.Wait()
+			close(chanErr)
+			c.release()
+		}
+	}(chanErr)
+
+	// Return immediately on error
+	return <-chanErr
 }
 
 func (srv *Server) handleRequests(c *Client) error {
@@ -195,7 +216,7 @@ func (srv *Server) handleRequests(c *Client) error {
 	return nil
 }
 
-func (srv *Server) handleResponses(c *Client) {
+func (srv *Server) handleResponses(c *Client) error {
 	// All response should be handled.
 	for response := range c.responses {
 		// find handler
@@ -205,23 +226,24 @@ func (srv *Server) handleResponses(c *Client) {
 
 		if !ok {
 			c.wr.AppendError(UnknownCommand(ASYNC_CB_NAME))
-			// Nothing can be done on error
-			c.wr.Flush()
+			// flush buffer, return on errors
+			if err := c.wr.Flush(); err != nil {
+				return err
+			}
 			continue
 		}
 
+		if contextable, ok := response.(Contextable); ok {
+			contextable.SetContext(context.WithValue(contextable.Context(), ctxKeyClient{}, c))
+		}
 		cb.(Callback).ServeCallback(c.wr, response)
 
-		// Nothing can be done on error
-		c.wr.Flush()
-
-		c.mu.Lock()
-		stop := len(c.responses) == 0 && c.closed
-		c.mu.Unlock()
-		if stop {
-			return
+		// flush buffer, return on errors
+		if err := c.wr.Flush(); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
 func (srv *Server) perform(c *Client, name string) (err error) {
