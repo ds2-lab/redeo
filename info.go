@@ -4,7 +4,7 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/cornelk/hashmap"
+	"github.com/zhangjyr/hashmap"
 	mathrand "math/rand"
 	"os"
 	"sort"
