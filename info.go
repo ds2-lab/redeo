@@ -4,13 +4,14 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/zhangjyr/hashmap"
 	mathrand "math/rand"
 	"os"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/zhangjyr/hashmap"
 
 	"github.com/mason-leap-lab/redeo/info"
 )
@@ -48,7 +49,7 @@ type CommandDescription struct {
 
 // ClientInfo contains client stats
 type ClientInfo struct {
-	client  *Client
+	client *Client
 
 	// ID is the internal client ID
 	ID uint64
@@ -100,7 +101,8 @@ type ServerInfo struct {
 	socket    string
 	pid       int
 
-	clients     *clientReadStats
+	clients clientStats
+	// clients     *clientReadStats
 	connections *info.IntValue
 	commands    *info.IntValue
 }
@@ -112,8 +114,8 @@ func newServerInfo() *ServerInfo {
 		startTime:   time.Now(),
 		connections: info.NewIntValue(0),
 		commands:    info.NewIntValue(0),
-		// clients:     clientStats{stats: make(map[uint64]*ClientInfo)},
-		clients:     &clientReadStats{ stats: &hashmap.HashMap{} },
+		clients:     clientStats{stats: make(map[uint64]*ClientInfo)},
+		// clients:     &clientReadStats{ stats: &hashmap.HashMap{} },
 	}
 	info.initDefaults()
 	return info
@@ -269,7 +271,6 @@ func (s *clientStats) All() []*Client {
 	}
 	return res
 }
-
 
 // Client stats optimized for read operation
 type clientReadStats struct {
