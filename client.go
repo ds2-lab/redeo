@@ -16,7 +16,7 @@ var (
 	readerPool sync.Pool
 	writerPool sync.Pool
 
-	ERR_CLIENT_CLOSED = errors.New("Client closed.")
+	ErrClientClosed = errors.New("client closed")
 )
 
 type ctxKeyClient struct{}
@@ -99,8 +99,7 @@ func (c *Client) AddResponses(rsp interface{}) error {
 	defer c.mu.Unlock()
 
 	if c.closed {
-		close(c.responses)
-		return ERR_CLIENT_CLOSED
+		return ErrClientClosed
 	}
 
 	c.responses <- rsp
@@ -111,7 +110,10 @@ func (c *Client) AddResponses(rsp interface{}) error {
 // to the client
 func (c *Client) Close() {
 	c.mu.Lock()
-	c.closed = true
+	if !c.closed {
+		c.closed = true
+		close(c.responses)
+	}
 	c.mu.Unlock()
 }
 
