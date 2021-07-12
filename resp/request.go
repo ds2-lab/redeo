@@ -82,6 +82,12 @@ func (r *RequestReader) SkipCmd() error {
 	return nil
 }
 
+// Close release resource
+func (r *RequestReader) Close() error {
+	r.r.Close()
+	return nil
+}
+
 func (r *RequestReader) peekCmd(offset int) (string, error) {
 	line, err := r.r.PeekLine(offset)
 	if err != nil {
@@ -158,54 +164,6 @@ func (w *RequestWriter) WriteCmd(cmd string, args ...[]byte) {
 	}
 }
 
-// writeCmd cmd, key, chunkId and val
-func (w *RequestWriter) WriteCmdBulk(cmd string, key string, chunkId string, args ...[]byte) {
-	w.w.AppendArrayLen(len(args) + 3)
-	w.w.AppendBulkString(cmd)
-	w.w.AppendBulkString(key)
-	w.w.AppendBulkString(chunkId)
-	for _, arg := range args {
-		w.w.AppendBulk(arg)
-	}
-}
-
-// writeCmd cmd & key & val to Redis server
-func (w *RequestWriter) WriteCmdBulkRedis(cmd string, key string, args ...[]byte) {
-	w.w.AppendArrayLen(len(args) + 2)
-	w.w.AppendBulkString(cmd)
-	w.w.AppendBulkString(key)
-	for _, arg := range args {
-		w.w.AppendBulk(arg)
-	}
-}
-
-// writeCmd cmd, key, client uuid, chunkId and val
-func (w *RequestWriter) WriteCmdClient(cmd string, key string, chunkId string, lambdaId string, reqId string, d string, p string, args ...[]byte) {
-	w.w.AppendArrayLen(len(args) + 7)
-	w.w.AppendBulkString(cmd)
-	// c.cmd.Arg(0)
-	w.w.AppendBulkString(key)
-	w.w.AppendBulkString(chunkId)
-	w.w.AppendBulkString(lambdaId)
-	w.w.AppendBulkString(reqId)
-	w.w.AppendBulkString(d)
-	w.w.AppendBulkString(p)
-	for _, arg := range args {
-		w.w.AppendBulk(arg)
-	}
-}
-
-func (w *RequestWriter) MyWriteCmd(cmd string, clientId string, reqId string, chunkId string, args ...[]byte) {
-	w.w.AppendArrayLen(len(args) + 4)
-	w.w.AppendBulkString(cmd)
-	w.w.AppendBulkString(clientId)
-	w.w.AppendBulkString(reqId)
-	w.w.AppendBulkString(chunkId)
-	for _, arg := range args {
-		w.w.AppendBulk(arg)
-	}
-}
-
 // WriteCmdString writes a full command as part of a pipeline. To execute the pipeline,
 // you must call Flush.
 func (w *RequestWriter) WriteCmdString(cmd string, args ...string) {
@@ -242,4 +200,10 @@ func (w *RequestWriter) WriteBulkString(s string) {
 // For normal operation, use WriteCmd or WriteCmdString.
 func (w *RequestWriter) CopyBulk(r io.Reader, n int64) error {
 	return w.w.CopyBulk(r, n)
+}
+
+// Close release resource
+func (w *RequestWriter) Close() error {
+	w.w.Close()
+	return nil
 }

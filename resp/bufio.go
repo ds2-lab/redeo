@@ -248,7 +248,7 @@ func (b *bufioR) PeekLine(offset int) (bufioLn, error) {
 	// 	fmt.Printf("Detected non LF after CR: %v", b.buf[start : start + index + 2])
 	// 	return bufioLn(b.buf[start : start + index + 1]), nil
 	// }
-	return bufioLn(b.buf[start : start + index + 2]), nil
+	return bufioLn(b.buf[start : start+index+2]), nil
 }
 
 // ReadLine returns the next line until CRLF
@@ -261,6 +261,12 @@ func (b *bufioR) ReadLine() (bufioLn, error) {
 // Reset resets the reader with an new interface
 func (b *bufioR) Reset(r io.Reader) {
 	b.reset(b.buf, r)
+}
+
+// Close release resources
+func (b *bufioR) Close() error {
+	b.buf = nil
+	return nil
 }
 
 // require ensures that sz bytes are buffered
@@ -320,14 +326,14 @@ func (b *bufioR) reset(buf []byte, rd io.Reader) {
 // --------------------------------------------------------------------
 
 type bulkReader struct {
-	*bufioR
-	len int64
-	n int64
+	buff *bufioR
+	len  int64
+	n    int64
 	wait chan struct{}
 }
 
 func newBulkReader(r *bufioR, n int64) *bulkReader {
-	return &bulkReader { bufioR: r, len: n, n: n + 2 }
+	return &bulkReader{buff: r, len: n, n: n + 2}
 }
 
 func (b *bulkReader) Read(p []byte) (n int, err error) {
@@ -340,11 +346,11 @@ func (b *bulkReader) Read(p []byte) (n int, err error) {
 		p = p[0:b.n]
 	}
 
-	if b.Buffered() == 0 {
-		n, err = b.rd.Read(p)
+	if b.buff.Buffered() == 0 {
+		n, err = b.buff.rd.Read(p)
 	} else {
-		n = copy(p, b.buf[b.r:b.w])
-		b.r += n
+		n = copy(p, b.buff.buf[b.buff.r:b.buff.w])
+		b.buff.r += n
 	}
 
 	b.n -= int64(n)
@@ -352,7 +358,7 @@ func (b *bulkReader) Read(p []byte) (n int, err error) {
 		n -= int(pad)
 		// FIXED: Skip left behind
 		if b.n > 0 {
-			err = b.skipN(b.n)
+			err = b.buff.skipN(b.n)
 			b.n = 0
 		}
 	}
@@ -401,7 +407,7 @@ func (b *bulkReader) Close() error {
 		return nil
 	}
 
-	err := b.skipN(b.n)
+	err := b.buff.skipN(b.n)
 	b.n = 0
 	return err
 }
@@ -677,6 +683,12 @@ func (b *bufioW) Flush() error {
 // Reset resets the writer with an new interface
 func (b *bufioW) Reset(w io.Writer) {
 	b.reset(b.buf, w)
+}
+
+// Close release resource
+func (b *bufioW) Close() error {
+	b.buf = nil
+	return nil
 }
 
 func (b *bufioW) flush() error {

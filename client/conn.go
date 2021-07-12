@@ -52,6 +52,8 @@ type Conn interface {
 	// some of the data was successfully written.
 	// A zero value for t means Write will not time out.
 	SetWriteDeadline(time.Time) error
+	// GetConn gets underline connection
+	GetConn() net.Conn
 
 	// UnreadBytes returns the number of unread bytes.
 	UnreadBytes() int
@@ -60,6 +62,9 @@ type Conn interface {
 
 	// Close (force) closes the connection.
 	Close() error
+
+	// Release release resource to avoid memory leaks.
+	Release()
 
 	madeByRedeo()
 }
@@ -92,7 +97,28 @@ func (c *conn) UnreadBytes() int { return c.ResponseReader.Buffered() }
 // UnflushedBytes implements Conn interface.
 func (c *conn) UnflushedBytes() int { return c.RequestWriter.Buffered() }
 
+// GetConn implements Conn interface.
+func (c *conn) GetConn() net.Conn {
+	return c.Conn
+}
+
 // Close implements Conn interface.
-func (c *conn) Close() error { c.failed = true; return c.Conn.Close() }
+func (c *conn) Close() error {
+	c.failed = true
+	err := c.Conn.Close()
+	// Close writer and reader
+	c.Release()
+	return err
+}
+
+// Release implements Conn interface.
+func (c *conn) Release() {
+	var w, r io.Closer
+	w, c.RequestWriter = c.RequestWriter, nil
+	r, c.ResponseReader = c.ResponseReader, nil
+	w.Close()
+	r.Close()
+	c.Conn = nil
+}
 
 func (c *conn) madeByRedeo() {}
