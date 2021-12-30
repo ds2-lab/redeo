@@ -102,18 +102,33 @@ func (b *bufioR) ReadArrayLen() (int, error) {
 }
 
 func (b *bufioR) ReadBulkLen() (int64, error) {
-	line, err := b.ReadLine()
+	return b.readBulkLen(false)
+}
+
+func (b *bufioR) readBulkLen(tooLongCheck bool) (int64, error) {
+	// Peek only, so client has chance to
+	line, err := b.PeekLine(0)
 	if err != nil {
 		return 0, err
 	}
-	return line.ParseSize('$', errInvalidBulkLength)
+
+	length, err := line.ParseSize('$', errInvalidBulkLength)
+	if err != nil {
+		return 0, err
+	} else if tooLongCheck && length+2 >= int64(len(b.buf)) {
+		return length, ErrBulkTooLong
+	}
+
+	// Confirm the reading.
+	b.r += len(line)
+	return length, err
 }
 
 func (b *bufioR) ReadBulk(p []byte) ([]byte, error) {
 	//temp0 := b.Buffered()
 	//fmt.Println("before require buff len is", temp0)
 	//t0 := time.Now()
-	sz, err := b.ReadBulkLen()
+	sz, err := b.readBulkLen(true)
 	if err != nil {
 		return p, err
 	}
@@ -150,7 +165,7 @@ func (b *bufioR) StreamBulk() (AllReadCloser, error) {
 }
 
 func (b *bufioR) ReadBulkString() (string, error) {
-	sz, err := b.ReadBulkLen()
+	sz, err := b.readBulkLen(true)
 	if err != nil {
 		return "", err
 	}

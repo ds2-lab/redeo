@@ -105,6 +105,7 @@ const (
 	errNotANumber             = protoError("Protocol error: expected a number")
 	errNotANilMessage         = protoError("Protocol error: expected a nil")
 	errBadResponseType        = protoError("Protocol error: bad response type")
+	ErrBulkTooLong            = protoError("Protocol error: bulk too long, stream it")
 )
 
 var (
@@ -116,6 +117,6 @@ var (
 )
 
 // MaxBufferSize is the max request/response buffer size
-const MaxBufferSize = 64 * 1024
+const MaxBufferSize = 4 * 1024
 
 func mkStdBuffer() []byte { return make([]byte, MaxBufferSize) }
