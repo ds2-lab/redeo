@@ -671,10 +671,13 @@ func (b *bufioW) CopyBulk(src io.Reader, n int64) error {
 	}
 
 	b.buf = b.buf[:cap(b.buf)]
-	_, err := io.CopyBuffer(b, io.LimitReader(src, int64(n)), b.buf)
+	// Since LimitReader will not return io.UnexpectedEOF, we need to check manually.
+	written, err := io.CopyBuffer(b, io.LimitReader(src, n), b.buf)
 	b.buf = b.buf[:0]
 	if err != nil {
 		return err
+	} else if written < n {
+		return io.ErrUnexpectedEOF
 	}
 
 	// FIXED: Instead of append CRLF to buf, we flush it directly.

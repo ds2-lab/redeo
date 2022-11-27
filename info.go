@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zhangjyr/hashmap"
-
 	"github.com/mason-leap-lab/redeo/info"
 )
 
@@ -115,7 +113,6 @@ func newServerInfo() *ServerInfo {
 		connections: info.NewIntValue(0),
 		commands:    info.NewIntValue(0),
 		clients:     clientStats{stats: make(map[uint64]*ClientInfo)},
-		// clients:     &clientReadStats{ stats: &hashmap.HashMap{} },
 	}
 	info.initDefaults()
 	return info
@@ -268,60 +265,6 @@ func (s *clientStats) All() []*Client {
 	res := make([]*Client, 0, len(s.stats))
 	for _, info := range s.stats {
 		res = append(res, info.client)
-	}
-	return res
-}
-
-// Client stats optimized for read operation
-type clientReadStats struct {
-	stats *hashmap.HashMap
-}
-
-func (s *clientReadStats) Add(c *Client) {
-	s.stats.Set(c.id, newClientInfo(c, time.Now()))
-}
-
-func (s *clientReadStats) Cmd(clientID uint64, cmd string) {
-	if info, ok := s.stats.Get(clientID); ok {
-		info.(*ClientInfo).AccessTime = time.Now()
-		info.(*ClientInfo).LastCmd = cmd
-	}
-}
-
-func (s *clientReadStats) Del(clientID uint64) {
-	s.stats.Del(clientID)
-}
-
-func (s *clientReadStats) Client(clientID uint64) (*Client, bool) {
-	info, exist := s.stats.Get(clientID)
-	if exist {
-		return info.(*ClientInfo).client, exist
-	} else {
-		return nil, false
-	}
-}
-
-func (s *clientReadStats) Len() int {
-	return s.stats.Len()
-}
-
-func (s *clientReadStats) Stats() []*ClientInfo {
-	iter := s.stats.Iter()
-	res := make(clientInfoSlice, 0, len(iter))
-	for keyVal := range iter {
-		info := *keyVal.Value.(*ClientInfo)
-		info.client = nil
-		res = append(res, &info)
-	}
-	sort.Sort(res)
-	return res
-}
-
-func (s *clientReadStats) All() []*Client {
-	iter := s.stats.Iter()
-	res := make([]*Client, 0, len(iter))
-	for keyVal := range iter {
-		res = append(res, keyVal.Value.(*ClientInfo).client)
 	}
 	return res
 }
