@@ -168,13 +168,13 @@ func (srv *Server) serveClient(c *Client, synch bool) error {
 		if err := srv.handleRequests(c); err != nil {
 			c.Close()
 			chanErr <- err
-			done.Done()
-
-			// Wait all done and release client
-			done.Wait()
-			close(chanErr)
-			c.release()
 		}
+		done.Done()
+
+		// Wait all done and release client
+		done.Wait()
+		close(chanErr)
+		c.release()
 	}(chanErr)
 
 	// Return immediately on error
